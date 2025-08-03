@@ -10,3 +10,8 @@ go get -u gorm.io/driver/mysql
 go mod tidy
 
 CREATE DATABASE pace;
+
+
+# cli
+go get -u github.com/spf13/cobra@latest
+go build -o pipeline
