@@ -24,14 +24,20 @@ type Task struct {
 
 // Scheduler 任务调度器
 type Scheduler struct {
-	tasks map[string]*Task // 任务映射：ID -> Task
-	mu    sync.Mutex       // 同步锁
+	tasks     map[string]*Task    // 任务映射：ID -> Task
+	depGraph  map[string][]string // 依赖图：任务ID -> 依赖它的任务列表
+	mu        sync.Mutex
+	errChan   chan error      // 用于传递任务执行错误的通道
+	completed map[string]bool // 记录已完成的任务
 }
 
 // NewScheduler 创建新的调度器
 func NewScheduler() *Scheduler {
 	return &Scheduler{
-		tasks: make(map[string]*Task),
+		tasks:     make(map[string]*Task),
+		depGraph:  make(map[string][]string),
+		errChan:   make(chan error, 1), // 缓冲通道，避免阻塞
+		completed: make(map[string]bool),
 	}
 }
 
@@ -49,11 +55,13 @@ func (s *Scheduler) AddTask(task *Task) error {
 		if _, exists := s.tasks[depID]; !exists {
 			return fmt.Errorf("task %s depends on non-existent task %s", task.ID, depID)
 		}
+		// 构建反向依赖图：记录哪些任务依赖当前任务
+		s.depGraph[depID] = append(s.depGraph[depID], task.ID)
 	}
 
 	// 设置默认镜像
 	if task.Image == "" {
-		task.Image = "docker.1ms.run/alpine"
+		task.Image = "alpine:latest"
 	}
 
 	task.Status = "pending"
@@ -61,21 +69,21 @@ func (s *Scheduler) AddTask(task *Task) error {
 	return nil
 }
 
-// 检测依赖环并生成拓扑排序后的任务执行顺序
-func (s *Scheduler) getExecutionOrder() ([]*Task, error) {
-	// 构建依赖图：任务ID -> 依赖的任务列表
-	depGraph := make(map[string][]string)
-	inDegree := make(map[string]int) // 每个任务的入度（依赖的任务数）
-	taskList := make([]*Task, 0, len(s.tasks))
-
-	// 初始化依赖图和入度
-	for _, task := range s.tasks {
-		taskList = append(taskList, task)
-		depGraph[task.ID] = task.Dependencies
-		inDegree[task.ID] = len(task.Dependencies)
+// 计算每个任务的入度（依赖的任务数）
+func (s *Scheduler) calculateInDegree() map[string]int {
+	inDegree := make(map[string]int)
+	for id, task := range s.tasks {
+		inDegree[id] = len(task.Dependencies)
 	}
+	return inDegree
+}
 
-	// 拓扑排序（Kahn算法）
+// Run 并行执行所有任务（按依赖关系分组并行）
+func (s *Scheduler) Run() error {
+	inDegree := s.calculateInDegree()
+	var wg sync.WaitGroup
+
+	// 初始化可执行任务队列（入度为0的任务）
 	queue := make([]string, 0)
 	for id, degree := range inDegree {
 		if degree == 0 {
@@ -83,62 +91,98 @@ func (s *Scheduler) getExecutionOrder() ([]*Task, error) {
 		}
 	}
 
-	result := make([]*Task, 0)
-	for len(queue) > 0 {
-		currentID := queue[0]
-		queue = queue[1:]
+	// 如果没有可执行任务且存在任务，说明有循环依赖
+	if len(queue) == 0 && len(s.tasks) > 0 {
+		return errors.New("circular dependency detected in tasks")
+	}
 
-		// 找到当前任务
-		var currentTask *Task
-		for _, t := range taskList {
-			if t.ID == currentID {
-				currentTask = t
-				break
+	fmt.Println("Starting parallel task execution...")
+
+	// 处理任务队列的函数
+	processQueue := func() {
+		defer wg.Done()
+
+		for len(queue) > 0 {
+			// 检查是否有错误发生，有则退出
+			select {
+			case err := <-s.errChan:
+				fmt.Printf("Fatal error: %v\n", err)
+				return
+			default:
 			}
-		}
-		result = append(result, currentTask)
 
-		// 减少依赖当前任务的任务的入度
-		for _, t := range taskList {
-			for _, depID := range t.Dependencies {
-				if depID == currentID {
-					inDegree[t.ID]--
-					if inDegree[t.ID] == 0 {
-						queue = append(queue, t.ID)
+			// 一次取出当前队列中所有可执行的任务（并行执行这一批）
+			currentBatch := make([]string, len(queue))
+			copy(currentBatch, queue)
+			queue = queue[:0] // 清空队列，准备接收下一批
+
+			var batchWg sync.WaitGroup
+			batchWg.Add(len(currentBatch))
+
+			fmt.Printf("Starting batch execution: %v\n", currentBatch)
+
+			// 并行执行当前批次的任务
+			for _, taskID := range currentBatch {
+				go func(id string) {
+					defer batchWg.Done()
+
+					// 检查是否已收到错误，有则不执行
+					select {
+					case err := <-s.errChan:
+						fmt.Printf("Task %s skipped due to error: %v\n", id, err)
+						return
+					default:
 					}
-				}
+
+					task := s.tasks[id]
+					if err := s.runTask(task); err != nil {
+						// 发送错误到通道（只发送第一个错误）
+						select {
+						case s.errChan <- err:
+						default:
+						}
+						return
+					}
+
+					// 任务完成后，更新依赖它的任务的入度
+					s.mu.Lock()
+					s.completed[id] = true
+					for _, dependentID := range s.depGraph[id] {
+						inDegree[dependentID]--
+						if inDegree[dependentID] == 0 {
+							queue = append(queue, dependentID)
+						}
+					}
+					s.mu.Unlock()
+				}(taskID)
 			}
+
+			// 等待当前批次所有任务完成
+			batchWg.Wait()
+			fmt.Printf("Completed batch: %v\n", currentBatch)
 		}
 	}
 
-	// 检查是否有循环依赖（未处理完所有任务）
-	if len(result) != len(s.tasks) {
-		return nil, errors.New("circular dependency detected in tasks")
+	wg.Add(1)
+	go processQueue()
+	wg.Wait()
+
+	// 检查是否有未完成的任务
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for id, task := range s.tasks {
+		if !s.completed[id] && task.Status != "failed" {
+			return fmt.Errorf("task %s was not executed", id)
+		}
 	}
 
-	return result, nil
-}
-
-// Run 执行所有任务（按依赖顺序）
-func (s *Scheduler) Run() error {
-	// 获取执行顺序
-	executionOrder, err := s.getExecutionOrder()
-	if err != nil {
+	// 检查是否有错误
+	select {
+	case err := <-s.errChan:
 		return err
+	default:
+		return nil
 	}
-
-	fmt.Printf("Execution order: %v\n", getTaskIDs(executionOrder))
-
-	// 依次执行任务
-	for _, task := range executionOrder {
-		if err := s.runTask(task); err != nil {
-			fmt.Printf("Task %s failed: %v\n", task.ID, err)
-			// 依赖该任务的后续任务将无法执行，直接返回
-			return err
-		}
-	}
-
-	return nil
 }
 
 // 执行单个任务（在Docker容器中）
@@ -185,7 +229,7 @@ func (s *Scheduler) runTask(task *Task) error {
 		return errors.New(task.Error)
 	}
 
-	// 4. 清理容器（如果需要保留容器用于调试，可以注释掉这行）
+	// 4. 清理容器
 	if err := cleanupDockerContainer(containerID); err != nil {
 		fmt.Printf("Warning: Failed to clean up container %s: %v\n", containerID[:12], err)
 	}
@@ -250,15 +294,6 @@ func dockerImageExists(image string) bool {
 	cmd := exec.Command("docker", "images", "-q", image)
 	output, err := cmd.CombinedOutput()
 	return err == nil && strings.TrimSpace(string(output)) != ""
-}
-
-// 辅助函数：获取任务ID列表
-func getTaskIDs(tasks []*Task) []string {
-	ids := make([]string, len(tasks))
-	for i, t := range tasks {
-		ids[i] = t.ID
-	}
-	return ids
 }
 
 // 检查Docker是否可用

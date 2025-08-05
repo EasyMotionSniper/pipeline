@@ -15,31 +15,37 @@ func main() {
 	// 1. 创建调度器
 	scheduler := NewScheduler()
 
-	// 2. 定义任务（示例：多个任务创建同名目录，但在独立Docker容器中）
+	// 2. 定义任务（示例：展示并行执行）
 	tasks := []*Task{
 		{
 			ID:           "t1",
-			Name:         "Create test directory 1",
-			Command:      "mkdir test && echo 't1: test directory created' && ls",
-			Dependencies: []string{}, // 无依赖
+			Name:         "Task 1 (no dependencies)",
+			Command:      "sleep 3 && mkdir test && echo 't1: test directory created'",
+			Dependencies: []string{},
 		},
 		{
 			ID:           "t2",
-			Name:         "Create test directory 2 (depends on t1)",
-			Command:      "mkdir test && echo 't2: test directory created' && ls",
-			Dependencies: []string{"t1"}, // 依赖t1完成
+			Name:         "Task 2 (no dependencies)",
+			Command:      "sleep 2 && mkdir test && echo 't2: test directory created'",
+			Dependencies: []string{},
 		},
 		{
 			ID:           "t3",
-			Name:         "Create test directory 3 (depends on t2)",
-			Command:      "mkdir test && echo 't3: test directory created' && ls",
-			Dependencies: []string{"t2"}, // 依赖t2完成
+			Name:         "Task 3 (depends on t1 and t2)",
+			Command:      "mkdir test && echo 't3: test directory created (depends on t1 and t2)'",
+			Dependencies: []string{"t1", "t2"},
 		},
 		{
 			ID:           "t4",
-			Name:         "Create test directory 4 (no dependencies)",
-			Command:      "mkdir test && echo 't4: test directory created' && ls",
-			Dependencies: []string{}, // 无依赖
+			Name:         "Task 4 (depends on t2)",
+			Command:      "mkdir test && echo 't4: test directory created (depends on t2)'",
+			Dependencies: []string{"t2"},
+		},
+		{
+			ID:           "t5",
+			Name:         "Task 5 (no dependencies)",
+			Command:      "sleep 1 && mkdir test && echo 't5: test directory created'",
+			Dependencies: []string{},
 		},
 	}
 
@@ -58,6 +64,7 @@ func main() {
 	}
 
 	fmt.Println("All tasks completed successfully")
+
 	/*
 		dsn := "root:13616749175ymq@tcp(localhost:3306)/pace?charset=utf8mb4&parseTime=True&loc=Local"
 		db, err := gorm.Open(mysql.Open(dsn))
