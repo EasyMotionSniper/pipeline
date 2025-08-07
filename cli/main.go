@@ -8,25 +8,19 @@ import (
 	"strings"
 
 	"pace-cli/cmd"
-	"pace-cli/config"
 
 	"github.com/spf13/cobra"
 )
 
 func main() {
-	// Load configuration and existing token
-	config.LoadConfig()
 
-	// Create root command
 	rootCmd := &cobra.Command{
 		Run: func(cmd *cobra.Command, args []string) {
 		},
 	}
 
-	// Register all commands
 	cmd.RegisterCommands(rootCmd)
 
-	// Start interactive mode
 	startInteractiveMode(rootCmd)
 }
 

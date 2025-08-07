@@ -1,0 +1,33 @@
+id: sample-pipeline
+name: Sample Pipeline with Dependencies
+triggers:
+  - type: cron
+    expression: "0 0 * * *"  # 每天午夜执行
+  - type: webhook
+    endpoint: "/webhooks/sample"
+
+tasks:
+  - id: task1
+    name: First Task
+    image: alpine:latest
+    command: "echo 'Task 1 executed' && sleep 5"
+  
+  - id: task2
+    name: Second Task
+    image: ubuntu:latest
+    command: "echo 'Task 2 executed' && sleep 3"
+  
+  - id: task3
+    name: Third Task (depends on task1 and task2)
+    image: busybox:latest
+    command: "echo 'Task 3 executed' && sleep 2"
+    dependencies:
+      - task1
+      - task2
+  
+  - id: task4
+    name: Fourth Task (depends on task3)
+    image: alpine:latest
+    command: "echo 'Task 4 executed' && sleep 1"
+    dependencies:
+      - task3

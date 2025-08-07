@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"pace-cli/config"
 )
+
+var token string
 
 // LoginResponse represents the authentication response
 type LoginResponse struct {
@@ -36,11 +37,9 @@ func CreateAuthenticatedRequest(method, url string, body io.Reader) (*http.Reque
 		return nil, err
 	}
 
-	// Add auth header if token exists
-	if config.GetToken() != "" {
-		req.Header.Set("Authorization", "Bearer "+config.GetToken())
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
-
 	return req, nil
 }
 

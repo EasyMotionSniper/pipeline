@@ -12,6 +12,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type LoginRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 var (
 	username string
 	password string
@@ -34,11 +39,9 @@ func NewLoginCommand() *cobra.Command {
 }
 
 func runLogin(cmd *cobra.Command, args []string) {
-	fmt.Println("runlogin")
-	// Prepare login data
-	data := map[string]string{
-		"username": username,
-		"password": password,
+	data := LoginRequest{
+		Username: username,
+		Password: password,
 	}
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -46,7 +49,6 @@ func runLogin(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	// Send login request
 	url := fmt.Sprintf("%s/login", config.ServerURL)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -78,8 +80,5 @@ func runLogin(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	// Save token
-	config.SetToken(loginResp.Token)
-	config.SaveConfig()
 	fmt.Println("Login successful")
 }
