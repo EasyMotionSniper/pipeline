@@ -25,12 +25,12 @@ func main() {
 
 func startInteractiveMode(rootCmd *cobra.Command) {
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Println("Pipeline CLI - Type 'help' to show help, 'exit' or 'quit' to quit")
+	fmt.Println("Pipeline CLI - Type 'help' to show help, 'exit' to exit")
 	fmt.Print(">> ")
 
 	for scanner.Scan() {
 		input := strings.TrimSpace(scanner.Text())
-		if input == "exit" || input == "quit" {
+		if input == "exit" {
 			break
 		}
 		if input == "" {

@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"pace/internal/server/handler"
+	"pace/internal/server/middleware"
 	"pace/internal/server/model"
 
 	"github.com/gin-gonic/gin"
@@ -78,13 +79,15 @@ func main() {
 		panic("failed to connect database")
 	}
 
-	// 自动迁移模型
 	db.AutoMigrate(&model.User{}, &model.Pipeline{}, &model.PipelineExecution{}, &model.TaskExecution{})
 
 	// gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
-	r.GET("/login", handler.UserLogin)
+	r.POST("/login", handler.UserLogin)
 
+	r.Use(middleware.JWTAuthMiddleware())
+	r.POST("/pipeline/update/:name", handler.UpdatePipeline)
+	r.POST("/pipeline/create", handler.CreatePipeline)
 	r.GET("/pipeline", func(c *gin.Context) {
 		var pipelines []model.Pipeline
 		db.Find(&pipelines)

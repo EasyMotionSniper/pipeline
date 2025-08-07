@@ -16,7 +16,6 @@ var (
 	password string
 )
 
-// NewLoginCommand creates the login command
 func NewLoginCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "login",
@@ -44,6 +43,10 @@ func runLogin(cmd *cobra.Command, args []string) {
 	}
 
 	resp, err := client.SendRequest(http.MethodPost, "/login", bytes.NewBuffer(jsonData))
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
@@ -57,17 +60,21 @@ func runLogin(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	var loginResp common.LoginResponse
+	var loginResp common.Response
 	if err := json.Unmarshal(body, &loginResp); err != nil {
 		fmt.Printf("Error: Failed to parse response - %v\n", err)
 		return
 	}
 
 	if loginResp.Code != 0 {
-		fmt.Printf("Login failed: %s\n", loginResp.Error)
+		fmt.Printf("Login failed: %s\n", loginResp.Message)
 		return
 	}
-
-	client.SaveToken(loginResp.Token)
-	fmt.Println("Login successful")
+	token, err := common.GetAuthorizationToken(resp.Header.Get("Authorization"))
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+	client.SaveToken(token)
+	fmt.Printf("Login successful, token: %s\n", token)
 }

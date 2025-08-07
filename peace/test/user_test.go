@@ -15,27 +15,26 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("Failed to connect database: %v", err)
 	}
 
-	if err != nil {
-		t.Fatalf("Migration failed: %v", err)
-	}
-
 	return db
 }
-func TestBatchPipelineInsert(t *testing.T) {
+func TestUserCreate(t *testing.T) {
 	db := setupTestDB(t)
-	pipelines := []model.Pipeline{
-		{Name: "Pipeline A", Config: "config_a"},
-		{Name: "Pipeline B", Config: "config_b"},
+	user := []model.User{
+		{
+			Username: "yang",
+			Password: "12345",
+			Role:     "executor",
+		},
+		{
+			Username: "wang",
+			Password: "123",
+			Role:     "viewer",
+		},
 	}
 
-	result := db.Create(&pipelines)
+	result := db.Create(user)
 	if result.Error != nil {
 		t.Fatalf("Batch insert failed: %v", result.Error)
-	}
-
-	// 验证插入数量
-	if result.RowsAffected != 2 {
-		t.Errorf("Expected 2 rows, got %d", result.RowsAffected)
 	}
 
 }

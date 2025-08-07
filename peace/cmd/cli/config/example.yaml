@@ -1,0 +1,22 @@
+name: example
+description: example pipeline
+
+triggers:
+  -cron: "0 0 * * *"
+  -webhook: "/webhooks/example"
+
+tasks:
+  -
+    name: task1
+    command: "echo 'task1 executed'"
+    result_check: "echo 'check task1 result'"
+  -
+    name: task2
+    command: "exit 1"
+    depends_on_success:
+      - task1
+  -
+    name: task3
+    command: "echo 'task3 executed'"
+    depends_on_failure:
+      - task2
