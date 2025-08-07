@@ -5,6 +5,7 @@ go mod init pace
 go get -u github.com/gin-gonic/gin
 
 go get -u gorm.io/gorm
+
 go get -u gorm.io/driver/mysql
 
 go mod tidy
@@ -14,4 +15,5 @@ CREATE DATABASE pace;
 
 # cli
 go get -u github.com/spf13/cobra@latest
+
 go build -o pipeline
