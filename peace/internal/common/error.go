@@ -19,6 +19,7 @@ const (
 	UserNotExists     = 10004
 	YamlInvalid       = 10005
 	PipelineNotExists = 10006
+	PipelineExists    = 10007
 )
 
 var errorMsg = map[int]string{
@@ -30,6 +31,7 @@ var errorMsg = map[int]string{
 	UserNotExists:     "user not exists",
 	YamlInvalid:       "yaml invalid",
 	PipelineNotExists: "pipeline not exists",
+	PipelineExists:    "pipeline already exists",
 }
 
 func (e ErrNo) Error() string {

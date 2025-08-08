@@ -7,7 +7,7 @@ import (
 
 type Pipeline struct {
 	gorm.Model
-	Name        string `gorm:"varchar(255);not null;uniqueIndex:idx_name_version"`
+	Name        string `gorm:"type:varchar(100);not null;uniqueIndex:idx_name_version"`
 	Description string `gorm:"type:text"`
 	Version     int    `gorm:"not null;uniqueIndex:idx_name_version"`
 	Config      string `gorm:"type:text;not null"`
@@ -29,8 +29,8 @@ type Task struct {
 	Name             string   `yaml:"name"`
 	Command          string   `yaml:"command"`
 	ResultCheck      string   `yaml:"result_check,omitempty"`
-	DependsOnSuccess []string `yaml:"depends_on_success,omitempty"` // 依赖成功的任务
-	DependsOnFailure []string `yaml:"depends_on_failure,omitempty"` // 依赖失败的任务
+	DependsOnSuccess []string `yaml:"depends_on_success,omitempty"`
+	DependsOnFailure []string `yaml:"depends_on_failure,omitempty"`
 }
 
 func ParsePipelineConfig(yamlContent string) (*PipelineConfig, error) {

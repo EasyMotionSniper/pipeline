@@ -10,4 +10,6 @@ func RegisterCommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(NewListCommand())
 	rootCmd.AddCommand(NewTriggerCommand())
 	rootCmd.AddCommand(NewHistoryCommand())
+	rootCmd.AddCommand(NewUpdateCommand())
+	rootCmd.AddCommand(NewCreateCommand())
 }

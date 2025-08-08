@@ -1,6 +1,8 @@
 package dao
 
 import (
+	"pace/internal/server/model"
+
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -14,4 +16,5 @@ func init() {
 		panic(err)
 	}
 	db = database
+	db.AutoMigrate(&model.User{}, &model.Pipeline{}, &model.PipelineExecution{}, &model.TaskExecution{})
 }

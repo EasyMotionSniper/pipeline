@@ -16,7 +16,7 @@ type PipelineDao interface {
 	// get pipeline by id
 	GetByID(ctx context.Context, id uint64) (*model.Pipeline, error)
 	// get pipeline by name
-	GetByName(ctx context.Context, name string) (*model.Pipeline, error)
+	GetNewestVersionByName(ctx context.Context, name string) (*model.Pipeline, error)
 }
 
 type pipelineDAO struct {
@@ -27,7 +27,14 @@ func NewPipelineDao() PipelineDao {
 }
 
 func (d *pipelineDAO) Create(ctx context.Context, pipeline *model.Pipeline) error {
-	return db.WithContext(ctx).Create(pipeline).Error
+	err := db.WithContext(ctx).Create(pipeline).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return common.NewErrNo(common.PipelineExists)
+		}
+		return err
+	}
+	return nil
 }
 
 func (d *pipelineDAO) GetByID(ctx context.Context, id uint64) (*model.Pipeline, error) {
@@ -39,9 +46,9 @@ func (d *pipelineDAO) GetByID(ctx context.Context, id uint64) (*model.Pipeline, 
 	return &pipeline, nil
 }
 
-func (d *pipelineDAO) GetByName(ctx context.Context, name string) (*model.Pipeline, error) {
+func (d *pipelineDAO) GetNewestVersionByName(ctx context.Context, name string) (*model.Pipeline, error) {
 	var pipeline model.Pipeline
-	err := db.WithContext(ctx).Where("name = ?", name).Take(&pipeline).Error
+	err := db.WithContext(ctx).Where("name = ?", name).Order("version desc").Take(&pipeline).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			fmt.Println("not found pipeline")

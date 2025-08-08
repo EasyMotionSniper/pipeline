@@ -7,8 +7,6 @@ import (
 	"pace/internal/server/model"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
 )
 
 func main() {
@@ -73,14 +71,6 @@ func main() {
 		fmt.Println("All tasks completed successfully")
 	*/
 
-	dsn := "root:13616749175ymq@tcp(localhost:3306)/pace?charset=utf8mb4&parseTime=True&loc=Local"
-	db, err := gorm.Open(mysql.Open(dsn))
-	if err != nil {
-		panic("failed to connect database")
-	}
-
-	db.AutoMigrate(&model.User{}, &model.Pipeline{}, &model.PipelineExecution{}, &model.TaskExecution{})
-
 	// gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.POST("/login", handler.UserLogin)
@@ -90,16 +80,16 @@ func main() {
 	r.POST("/pipeline/create", handler.CreatePipeline)
 	r.GET("/pipeline", func(c *gin.Context) {
 		var pipelines []model.Pipeline
-		db.Find(&pipelines)
+		// db.Find(&pipelines)
 		c.JSON(http.StatusOK, gin.H{
 			"pipelines": pipelines,
 		})
 	})
 	r.GET("/pipeline/:id", func(c *gin.Context) {
-		id := c.Param("id")
+		// id := c.Param("id")
 		var pipeline model.Pipeline
 		// first ?
-		db.First(&pipeline, id)
+		// db.First(&pipeline, id)
 		c.JSON(http.StatusOK, gin.H{
 			"pipeline": pipeline,
 		})

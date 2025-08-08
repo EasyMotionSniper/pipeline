@@ -20,7 +20,7 @@ var (
 func NewCreateCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "create [file]",
+		Use:   "create",
 		Short: "Create a new pipeline from a YAML file",
 		Run:   runCreateCommand,
 	}
@@ -31,7 +31,7 @@ func NewCreateCommand() *cobra.Command {
 
 func NewUpdateCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "update [name] [file]",
+		Use:   "update",
 		Short: "Update a pipeline with a new YAML configuration",
 		Run:   runUpdateCommand,
 	}
@@ -70,7 +70,7 @@ func runCreateCommand(cmd *cobra.Command, args []string) {
 		return
 	}
 	if updateResp.Code != 0 {
-		fmt.Printf("Login failed: %s\n", updateResp.Message)
+		fmt.Printf("Create pipeline failed: %s\n", updateResp.Message)
 		return
 	}
 }
@@ -103,7 +103,7 @@ func runUpdateCommand(cmd *cobra.Command, args []string) {
 		return
 	}
 	if updateResp.Code != 0 {
-		fmt.Printf("Login failed: %s\n", updateResp.Message)
+		fmt.Printf("Update pipeline failed: %s\n", updateResp.Message)
 		return
 	}
 }

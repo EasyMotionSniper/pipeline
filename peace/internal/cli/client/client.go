@@ -48,7 +48,6 @@ func SendFile(method, path string, file io.Reader) (*http.Response, error) {
 func CreateRequest(method, path string, body io.Reader) (*http.Request, error) {
 	url := serverURL + path
 	req, err := http.NewRequest(method, url, body)
-	fmt.Println(url)
 	if err != nil {
 		return nil, err
 	}

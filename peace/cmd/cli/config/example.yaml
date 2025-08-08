@@ -2,8 +2,8 @@ name: example
 description: example pipeline
 
 triggers:
-  -cron: "0 0 * * *"
-  -webhook: "/webhooks/example"
+  - cron: "0 0 * * *"
+  - webhook: "/webhooks/example"
 
 tasks:
   -
