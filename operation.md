@@ -22,6 +22,6 @@ go build -o pipeline
 
 go get gopkg.in/yaml.v3
 
-go get github.com/docker/docker/client
+go get github.com/docker/docker/client@v25.0.12
 
 go get github.com/robfig/cron/v3
