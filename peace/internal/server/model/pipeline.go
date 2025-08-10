@@ -1,6 +1,8 @@
 package model
 
 import (
+	"pace/pkg/taskrpc"
+
 	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
 )
@@ -14,23 +16,15 @@ type Pipeline struct {
 }
 
 type PipelineConfig struct {
-	Name        string    `yaml:"name"`
-	Description string    `yaml:"description"`
-	Triggers    []Trigger `yaml:"triggers"`
-	Tasks       []Task    `yaml:"tasks"`
+	Name        string         `yaml:"name"`
+	Description string         `yaml:"description"`
+	Triggers    []Trigger      `yaml:"triggers"`
+	Tasks       []taskrpc.Task `yaml:"tasks"`
 }
 
 type Trigger struct {
 	Cron    string `yaml:"cron,omitempty"`
 	Webhook string `yaml:"webhook,omitempty"`
-}
-
-type Task struct {
-	Name             string   `yaml:"name"`
-	Command          string   `yaml:"command"`
-	ResultCheck      string   `yaml:"result_check,omitempty"`
-	DependsOnSuccess []string `yaml:"depends_on_success,omitempty"`
-	DependsOnFailure []string `yaml:"depends_on_failure,omitempty"`
 }
 
 func ParsePipelineConfig(yamlContent string) (*PipelineConfig, error) {

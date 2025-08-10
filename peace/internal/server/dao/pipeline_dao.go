@@ -14,7 +14,7 @@ type PipelineDao interface {
 	// create pipeline
 	Create(ctx context.Context, pipeline *model.Pipeline) error
 	// get pipeline by id
-	GetByID(ctx context.Context, id uint64) (*model.Pipeline, error)
+	GetNewestVersionByID(ctx context.Context, id uint64) (*model.Pipeline, error)
 	// get pipeline by name
 	GetNewestVersionByName(ctx context.Context, name string) (*model.Pipeline, error)
 }
@@ -37,10 +37,14 @@ func (d *pipelineDAO) Create(ctx context.Context, pipeline *model.Pipeline) erro
 	return nil
 }
 
-func (d *pipelineDAO) GetByID(ctx context.Context, id uint64) (*model.Pipeline, error) {
+func (d *pipelineDAO) GetNewestVersionByID(ctx context.Context, id uint64) (*model.Pipeline, error) {
 	var pipeline model.Pipeline
-	err := db.WithContext(ctx).Where("id = ?", id).Take(&pipeline).Error
+	err := db.WithContext(ctx).Where("id = ?", id).Order("version desc").Take(&pipeline).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			fmt.Println("not found pipeline")
+			return nil, common.NewErrNo(common.PipelineNotExists)
+		}
 		return nil, err
 	}
 	return &pipeline, nil

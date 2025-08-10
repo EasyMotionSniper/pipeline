@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"pace/internal/common"
 	"time"
 
@@ -54,7 +55,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			}
 			c.Header("Authorization", "Bearer "+newToken)
 		}
-
+		fmt.Println("User role:", claims.Role)
 		c.Set("userRole", claims.Role)
 		c.Next()
 	}

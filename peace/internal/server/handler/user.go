@@ -4,12 +4,13 @@ import (
 	"pace/internal/common"
 	"pace/internal/server/dao"
 	"pace/internal/server/middleware"
+	"pace/pkg/api"
 
 	"github.com/gin-gonic/gin"
 )
 
 func UserLogin(c *gin.Context) {
-	var req common.LoginRequest
+	var req api.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		common.Error(c, common.NewErrNo(common.RequestInvalid))
 		return

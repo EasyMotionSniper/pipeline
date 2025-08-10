@@ -7,13 +7,9 @@ import (
 	"net/http"
 	"pace/internal/cli/client"
 	"pace/internal/common"
+	"pace/pkg/api"
 
 	"github.com/spf13/cobra"
-)
-
-var (
-	username string
-	password string
 )
 
 func NewLoginCommand() *cobra.Command {
@@ -23,8 +19,8 @@ func NewLoginCommand() *cobra.Command {
 		Run:   runLogin,
 	}
 
-	cmd.Flags().StringVarP(&username, "username", "u", "", "Username for login (required)")
-	cmd.Flags().StringVarP(&password, "password", "p", "", "Password for login (required)")
+	cmd.Flags().StringP("username", "u", "", "Username for login (required)")
+	cmd.Flags().StringP("password", "p", "", "Password for login (required)")
 	cmd.MarkFlagRequired("username")
 	cmd.MarkFlagRequired("password")
 
@@ -32,7 +28,17 @@ func NewLoginCommand() *cobra.Command {
 }
 
 func runLogin(cmd *cobra.Command, args []string) {
-	data := common.LoginRequest{
+	username, err := cmd.Flags().GetString("username")
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+	password, err := cmd.Flags().GetString("password")
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+	data := api.LoginRequest{
 		Username: username,
 		Password: password,
 	}

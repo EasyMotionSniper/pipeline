@@ -1,6 +1,7 @@
 package rpcserver
 
 import (
+	"log"
 	"net"
 	"net/rpc"
 	"net/rpc/jsonrpc"
@@ -41,6 +42,7 @@ func NewServer(backendRPCAddr string) (*Server, error) {
 
 // ExecuteTask 实现 RPC 方法：接收后端的任务执行请求（非阻塞）
 func (s *Server) ExecuteTask(req *taskrpc.ExecutePipelineRequest, resp *taskrpc.ExecutePipelineResponse) error {
+	log.Printf("ExecuteTask req: %v", req)
 	go func() {
 		s.sched.SchedulePipeline(req)
 	}()
