@@ -10,8 +10,25 @@ import (
 	"sync"
 
 	"github.com/hibiken/asynq"
-	"gorm.io/gorm"
 )
+
+var schedulerService *SchedulerService
+var once sync.Once
+
+func StartScheduler() error {
+	return GetSchedulerService().Start()
+}
+
+func GetSchedulerService() *SchedulerService {
+	once.Do(func() {
+		scheduler := asynq.NewScheduler(asynq.RedisClientOpt{Addr: "localhost:6379", Password: "justredis"}, nil)
+		schedulerService = newSchedulerService(scheduler)
+		if err := schedulerService.LoadAllSchedules(); err != nil {
+			log.Fatalf("Failed to load schedules: %v", err)
+		}
+	})
+	return schedulerService
+}
 
 type SchedulerService struct {
 	scheduler     *asynq.Scheduler
@@ -19,14 +36,14 @@ type SchedulerService struct {
 	scheduledJobs map[uint]string // pipeline ID -> 调度任务ID
 }
 
-func NewSchedulerService(scheduler *asynq.Scheduler, db *gorm.DB) *SchedulerService {
+func newSchedulerService(scheduler *asynq.Scheduler) *SchedulerService {
 	return &SchedulerService{
 		scheduler:     scheduler,
 		scheduledJobs: make(map[uint]string),
 	}
 }
 
-func (s *SchedulerService) Start(ctx context.Context) error {
+func (s *SchedulerService) Start() error {
 	log.Println("Starting scheduler...")
 	return s.scheduler.Start()
 }
@@ -65,7 +82,7 @@ func (s *SchedulerService) UpsertPipelineSchedule(pipelineVersion *model.Pipelin
 		if err != nil {
 			return err
 		}
-		task := asynq.NewTask("pipeline:run", jsonData)
+		task := asynq.NewTask(queue.PIPELINE_EXECUTE, jsonData)
 		jobID, err = s.scheduler.Register(trigger.Cron, task)
 		if err != nil {
 			log.Printf("Error scheduling pipeline %d: %v", pipelineVersion.PipelineID, err)
@@ -84,6 +101,7 @@ func (s *SchedulerService) UpsertPipelineSchedule(pipelineVersion *model.Pipelin
 }
 
 func (s *SchedulerService) LoadAllSchedules() error {
+
 	pipelineDao := dao.NewPipelineDao()
 	// 获取所有管道
 	pipelineVersions, err := pipelineDao.GetAllPipelineVersions(context.Background())
@@ -92,7 +110,6 @@ func (s *SchedulerService) LoadAllSchedules() error {
 	}
 
 	for _, pipelineVersion := range pipelineVersions {
-
 		if err := s.UpsertPipelineSchedule(pipelineVersion); err != nil {
 			log.Printf("Error scheduling pipeline %d: %v", pipelineVersion.PipelineID, err)
 		}

@@ -6,6 +6,7 @@ import (
 	"pace/internal/common"
 	"pace/internal/server/dao"
 	"pace/internal/server/model"
+	"pace/internal/server/scheduler"
 	"pace/pkg/api"
 	"pace/pkg/queue"
 
@@ -44,6 +45,12 @@ func CreatePipeline(c *gin.Context) {
 		return
 	}
 
+	err = scheduler.GetSchedulerService().UpsertPipelineSchedule(pipelineVersion)
+	if err != nil {
+		common.Error(c, common.NewErrNo(common.ScheduleInvalid))
+		return
+	}
+
 	common.Success(c, nil)
 }
 
@@ -73,6 +80,11 @@ func UpdatePipeline(c *gin.Context) {
 	err = pipelineDAO.Update(c, name, pipeline, pipelineVersion)
 	if err != nil {
 		common.Error(c, common.NewErrNo(common.PipelineNotExists))
+		return
+	}
+	err = scheduler.GetSchedulerService().UpsertPipelineSchedule(pipelineVersion)
+	if err != nil {
+		common.Error(c, common.NewErrNo(common.ScheduleInvalid))
 		return
 	}
 

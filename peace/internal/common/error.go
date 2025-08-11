@@ -21,6 +21,7 @@ const (
 	PipelineNotExists = 10006
 	PipelineExists    = 10007
 	PiplineStartFail  = 10008
+	ScheduleInvalid   = 10009
 )
 
 var errorMsg = map[int]string{
@@ -34,6 +35,7 @@ var errorMsg = map[int]string{
 	PipelineNotExists: "pipeline not exists",
 	PipelineExists:    "pipeline already exists",
 	PiplineStartFail:  "pipeline starts fail",
+	ScheduleInvalid:   "schedule invalid",
 }
 
 func (e ErrNo) Error() string {

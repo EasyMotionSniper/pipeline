@@ -2,6 +2,10 @@ package queue
 
 import "gopkg.in/yaml.v3"
 
+const PIPELINE_EXECUTE = "pipeline:execute"
+const PIPELINE_STATUS_UPDATE = "pipeline:status:update"
+const TASK_STATUS_UPDATE = "task:status:update"
+
 type Trigger struct {
 	Cron    string `yaml:"cron,omitempty"`
 	Webhook string `yaml:"webhook,omitempty"`
