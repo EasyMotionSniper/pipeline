@@ -3,7 +3,6 @@ package dao
 import (
 	"context"
 	"errors"
-	"fmt"
 	"pace/internal/common"
 	"pace/internal/server/model"
 
@@ -12,11 +11,12 @@ import (
 
 type PipelineDao interface {
 	// create pipeline
-	Create(ctx context.Context, pipeline *model.Pipeline) error
-	// get pipeline by id
-	GetNewestVersionByID(ctx context.Context, id uint64) (*model.Pipeline, error)
+	Create(ctx context.Context, pipeline *model.Pipeline, pipelineVersion *model.PipelineVersion) error
+	Update(ctx context.Context, oldName string, pipeline *model.Pipeline, pipelineVersion *model.PipelineVersion) error
 	// get pipeline by name
-	GetNewestVersionByName(ctx context.Context, name string) (*model.Pipeline, error)
+	GetPipelineByName(ctx context.Context, name string) (*model.Pipeline, *model.PipelineVersion, error)
+	GetAllPipelines(ctx context.Context) ([]*model.Pipeline, error)
+	GetAllPipelineVersions(ctx context.Context) ([]*model.PipelineVersion, error)
 }
 
 type pipelineDAO struct {
@@ -26,40 +26,96 @@ func NewPipelineDao() PipelineDao {
 	return &pipelineDAO{}
 }
 
-func (d *pipelineDAO) Create(ctx context.Context, pipeline *model.Pipeline) error {
-	err := db.WithContext(ctx).Create(pipeline).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			return common.NewErrNo(common.PipelineExists)
+func (d *pipelineDAO) Create(ctx context.Context, pipeline *model.Pipeline, pipelineVersion *model.PipelineVersion) error {
+	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// create pipeline
+		if err := tx.Create(pipeline).Error; err != nil {
+			if errors.Is(err, gorm.ErrDuplicatedKey) {
+				return common.NewErrNo(common.PipelineExists)
+			}
+			return err
 		}
-		return err
-	}
-	return nil
+		// create pipeline version
+		pipelineVersion.PipelineID = pipeline.ID
+		if err := tx.Create(pipelineVersion).Error; err != nil {
+			if errors.Is(err, gorm.ErrDuplicatedKey) {
+				return common.NewErrNo(common.PipelineExists)
+			}
+			return err
+		}
+
+		return nil
+	})
+
 }
 
-func (d *pipelineDAO) GetNewestVersionByID(ctx context.Context, id uint64) (*model.Pipeline, error) {
-	var pipeline model.Pipeline
-	err := db.WithContext(ctx).Where("id = ?", id).Order("version desc").Take(&pipeline).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			fmt.Println("not found pipeline")
-			return nil, common.NewErrNo(common.PipelineNotExists)
+func (d *pipelineDAO) Update(ctx context.Context, oldName string, newPipeline *model.Pipeline, pipelineVersion *model.PipelineVersion) error {
+	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var pipeline model.Pipeline
+		// get pipeline by name
+		if err := tx.Where("name = ?", oldName).Take(&pipeline).Error; err != nil {
+			return err
 		}
-		return nil, err
-	}
-	return &pipeline, nil
+
+		pipeline.Name = newPipeline.Name
+		pipeline.Description = newPipeline.Description
+		pipeline.LatestVersion += 1
+		if err := tx.Save(&pipeline).Error; err != nil {
+			return err
+		}
+
+		// update pipeline version
+		pipelineVersion.PipelineID = pipeline.ID
+		pipelineVersion.Version = pipeline.LatestVersion
+		if err := tx.Save(pipelineVersion).Error; err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
-func (d *pipelineDAO) GetNewestVersionByName(ctx context.Context, name string) (*model.Pipeline, error) {
+func (d *pipelineDAO) GetPipelineByName(ctx context.Context, name string) (*model.Pipeline, *model.PipelineVersion, error) {
 	var pipeline model.Pipeline
-	err := db.WithContext(ctx).Where("name = ?", name).Order("version desc").Take(&pipeline).Error
+	var pipelineVersion model.PipelineVersion
+	err := db.WithContext(ctx).Where("name = ?", name).Take(&pipeline).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			fmt.Println("not found pipeline")
-			return nil, common.NewErrNo(common.PipelineNotExists)
+			return nil, nil, common.NewErrNo(common.PipelineNotExists)
 		}
-		fmt.Println(err)
+		return nil, nil, err
+	}
+	// get pipeline version
+	err = db.WithContext(ctx).Where("pipeline_id = ? and version = ?", pipeline.ID, pipeline.LatestVersion).Take(&pipelineVersion).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil, common.NewErrNo(common.PipelineNotExists)
+		}
+		return nil, nil, err
+	}
+	return &pipeline, &pipelineVersion, nil
+}
+
+func (d *pipelineDAO) GetAllPipelines(ctx context.Context) ([]*model.Pipeline, error) {
+	var pipelines []*model.Pipeline
+	if err := db.WithContext(ctx).Find(&pipelines).Error; err != nil {
 		return nil, err
 	}
-	return &pipeline, nil
+	return pipelines, nil
+}
+
+func (d *pipelineDAO) GetAllPipelineVersions(ctx context.Context) ([]*model.PipelineVersion, error) {
+	var pipelineVersions []*model.PipelineVersion
+	pipelines, err := d.GetAllPipelines(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, pipeline := range pipelines {
+		var pipelineVersion model.PipelineVersion
+		if err := db.WithContext(ctx).Where("pipeline_id = ?", pipeline.ID).Where("version = ?", pipeline.LatestVersion).Take(&pipelineVersion).Error; err != nil {
+			return nil, err
+		}
+		pipelineVersions = append(pipelineVersions, &pipelineVersion)
+	}
+
+	return pipelineVersions, nil
 }

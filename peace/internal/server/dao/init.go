@@ -16,5 +16,5 @@ func init() {
 		panic(err)
 	}
 	db = database
-	db.AutoMigrate(&model.User{}, &model.Pipeline{}, &model.PipelineExecution{}, &model.TaskExecution{})
+	db.AutoMigrate(&model.User{}, &model.Pipeline{}, &model.PipelineVersion{}, &model.PipelineExecution{}, &model.TaskExecution{})
 }

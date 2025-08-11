@@ -13,10 +13,10 @@ tasks:
   -
     name: task2
     command: "exit 1"
-    depends_on_success:
+    depends_on:
       - task1
   -
     name: task3
     command: "echo 'task3 executed'"
-    depends_on_failure:
+    depends_on:
       - task2

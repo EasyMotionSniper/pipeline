@@ -8,10 +8,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	historyPipelineID string
-)
-
 // NewHistoryCommand creates the history command
 func NewHistoryCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -20,13 +16,17 @@ func NewHistoryCommand() *cobra.Command {
 		Run:   runHistory,
 	}
 
-	cmd.Flags().StringVarP(&historyPipelineID, "id", "i", "", "Specific pipeline ID to show history for")
+	cmd.Flags().StringP("id", "i", "", "Specific pipeline ID to show history for")
 
 	return cmd
 }
 
 func runHistory(cmd *cobra.Command, args []string) {
-
+	historyPipelineID, err := cmd.Flags().GetString("id")
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
 	var path string
 	if historyPipelineID != "" {
 		path = fmt.Sprintf("/history/%s", historyPipelineID)

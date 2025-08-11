@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 	"pace/internal/server/handler"
-	"pace/internal/server/middleware"
 	"pace/internal/server/model"
 
 	"github.com/gin-gonic/gin"
@@ -15,7 +14,7 @@ func main() {
 	r := gin.New()
 	r.POST("/login", handler.UserLogin)
 
-	r.Use(middleware.JWTAuthMiddleware())
+	// r.Use(middleware.JWTAuthMiddleware())
 
 	r.POST("/pipeline/update/:name", handler.UpdatePipeline)
 	r.POST("/pipeline/create", handler.CreatePipeline)

@@ -6,24 +6,11 @@ import (
 	"pace/internal/common"
 	"pace/internal/server/dao"
 	"pace/internal/server/model"
-	rpccall "pace/internal/server/rpc_call"
 	"pace/pkg/api"
-	"pace/pkg/taskrpc"
+	"pace/pkg/queue"
 
 	"github.com/gin-gonic/gin"
 )
-
-// rpc clint
-var taskExecRpc *rpccall.Client
-
-func init() {
-	return
-	client, err := rpccall.NewClient("localhost:8081")
-	if err != nil {
-		panic(err)
-	}
-	taskExecRpc = client
-}
 
 func CreatePipeline(c *gin.Context) {
 	// read yaml
@@ -33,7 +20,7 @@ func CreatePipeline(c *gin.Context) {
 		return
 	}
 
-	pipelineConfig, err := model.ParsePipelineConfig(string(yamlContent))
+	pipelineConfig, err := queue.ParsePipelineConfig(string(yamlContent))
 	if err != nil {
 		common.Error(c, common.NewErrNo(common.YamlInvalid))
 		return
@@ -43,12 +30,15 @@ func CreatePipeline(c *gin.Context) {
 	// create pipeline
 	pipelineDAO := dao.NewPipelineDao()
 	pipeline := &model.Pipeline{
-		Name:        pipelineConfig.Name,
-		Description: pipelineConfig.Description,
-		Version:     0,
-		Config:      string(yamlContent),
+		Name:          pipelineConfig.Name,
+		Description:   pipelineConfig.Description,
+		LatestVersion: 0,
 	}
-	err = pipelineDAO.Create(c, pipeline)
+	pipelineVersion := &model.PipelineVersion{
+		Version: 0,
+		Config:  string(yamlContent),
+	}
+	err = pipelineDAO.Create(c, pipeline, pipelineVersion)
 	if err != nil {
 		common.Error(c, common.NewErrNo(common.PipelineExists))
 		return
@@ -65,27 +55,24 @@ func UpdatePipeline(c *gin.Context) {
 		return
 	}
 
-	pipelineConfig, err := model.ParsePipelineConfig(string(yamlContent))
+	pipelineConfig, err := queue.ParsePipelineConfig(string(yamlContent))
 	if err != nil {
 		common.Error(c, common.NewErrNo(common.YamlInvalid))
 		return
 	}
 
 	pipelineDAO := dao.NewPipelineDao()
-	pipeline, err := pipelineDAO.GetNewestVersionByName(c, name)
-	if err != nil {
-		common.Error(c, common.NewErrNo(common.PipelineNotExists))
-		return
-	}
-	newPipeline := &model.Pipeline{
+	pipeline := &model.Pipeline{
 		Name:        pipelineConfig.Name,
 		Description: pipelineConfig.Description,
-		Version:     pipeline.Version + 1,
-		Config:      string(yamlContent),
 	}
-	err = pipelineDAO.Create(c, newPipeline)
+	// check if pipeline exists
+	pipelineVersion := &model.PipelineVersion{
+		Config: string(yamlContent),
+	}
+	err = pipelineDAO.Update(c, name, pipeline, pipelineVersion)
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.PipelineExists))
+		common.Error(c, common.NewErrNo(common.PipelineNotExists))
 		return
 	}
 
@@ -93,7 +80,6 @@ func UpdatePipeline(c *gin.Context) {
 }
 
 func TriggerPipeline(c *gin.Context) {
-	fmt.Println("TriggerPipeline called")
 	var req api.TriggerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		common.Error(c, common.NewErrNo(common.RequestInvalid))
@@ -102,30 +88,23 @@ func TriggerPipeline(c *gin.Context) {
 	log.Printf("TriggerPipeline req: %v", req)
 
 	pipelineDAO := dao.NewPipelineDao()
-	pipeline, err := pipelineDAO.GetNewestVersionByID(c, uint64(req.PipelineID))
+	_, pipelineVersion, err := pipelineDAO.GetPipelineByName(c, req.PipelineName)
 	if err != nil {
 		common.Error(c, common.NewErrNo(common.PipelineNotExists))
 		return
 	}
 
 	// unmarshal pipeline config to tasks
-	pipelineConfig, err := model.ParsePipelineConfig(pipeline.Config)
+	pipelineConfig, err := queue.ParsePipelineConfig(pipelineVersion.Config)
 	if err != nil {
 		common.Error(c, common.NewErrNo(common.YamlInvalid))
 		return
 	}
+	fmt.Println(pipelineConfig)
 
 	// insert into pipeline execution record
 	// TODO
-	log.Printf("TriggerPipeline req: %v", req)
-	_, err = taskExecRpc.ExecuteTask(&taskrpc.ExecutePipelineRequest{
-		ExecutionID: 1,
-		Tasks:       pipelineConfig.Tasks,
-	})
-	if err != nil {
-		common.Error(c, common.NewErrNo(common.PiplineStartFail))
-		return
-	}
+
 	triggerResp := api.TriggerResponse{
 		ExecutionID: 1,
 	}

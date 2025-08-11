@@ -1,36 +1,20 @@
 package model
 
 import (
-	"pace/pkg/taskrpc"
-
-	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
 )
 
 type Pipeline struct {
 	gorm.Model
-	Name        string `gorm:"type:varchar(100);not null;uniqueIndex:idx_name_version"`
-	Description string `gorm:"type:text"`
-	Version     int    `gorm:"not null;uniqueIndex:idx_name_version"`
-	Config      string `gorm:"type:text;not null"`
+	Name          string `gorm:"type:varchar(128);uniqueIndex" json:"name"` // 唯一名称
+	Description   string `gorm:"type:text" json:"description"`
+	LatestVersion int    `gorm:"default:0" json:"latest_version"` // 最新版本号
 }
 
-type PipelineConfig struct {
-	Name        string         `yaml:"name"`
-	Description string         `yaml:"description"`
-	Triggers    []Trigger      `yaml:"triggers"`
-	Tasks       []taskrpc.Task `yaml:"tasks"`
-}
-
-type Trigger struct {
-	Cron    string `yaml:"cron,omitempty"`
-	Webhook string `yaml:"webhook,omitempty"`
-}
-
-func ParsePipelineConfig(yamlContent string) (*PipelineConfig, error) {
-	var config PipelineConfig
-	if err := yaml.Unmarshal([]byte(yamlContent), &config); err != nil {
-		return nil, err
-	}
-	return &config, nil
+// PipelineVersion 存储每个版本的配置（关联到Pipeline）
+type PipelineVersion struct {
+	gorm.Model
+	PipelineID uint   `gorm:"uniqueIndex:idx_pipeline_version" json:"pipeline_id"`      // 关联Pipeline.ID
+	Version    int    `gorm:"type:int;uniqueIndex:idx_pipeline_version" json:"version"` // 版本号（每个pipeline独立自增）
+	Config     string `gorm:"type:text" json:"config"`                                  // 完整配置（YAML字符串）
 }

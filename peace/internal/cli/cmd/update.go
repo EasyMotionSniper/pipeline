@@ -12,11 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	configName string
-	yamlFile   string
-)
-
 func NewCreateCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
@@ -24,7 +19,7 @@ func NewCreateCommand() *cobra.Command {
 		Short: "Create a new pipeline from a YAML file",
 		Run:   runCreateCommand,
 	}
-	cmd.Flags().StringVarP(&yamlFile, "yaml_file", "f", "", "YAML file path (required)")
+	cmd.Flags().StringP("yaml_file", "f", "", "YAML file path (required)")
 	cmd.MarkFlagRequired("yaml_file")
 	return cmd
 }
@@ -35,8 +30,8 @@ func NewUpdateCommand() *cobra.Command {
 		Short: "Update a pipeline with a new YAML configuration",
 		Run:   runUpdateCommand,
 	}
-	cmd.Flags().StringVarP(&configName, "config_name", "n", "", "Config name (required)")
-	cmd.Flags().StringVarP(&yamlFile, "yaml_file", "f", "", "YAML file path (required)")
+	cmd.Flags().StringP("config_name", "n", "", "Config name (required)")
+	cmd.Flags().StringP("yaml_file", "f", "", "YAML file path (required)")
 	cmd.MarkFlagRequired("config_name")
 	cmd.MarkFlagRequired("yaml_file")
 	return cmd
@@ -44,6 +39,11 @@ func NewUpdateCommand() *cobra.Command {
 
 func runCreateCommand(cmd *cobra.Command, args []string) {
 	// read yaml file
+	yamlFile, err := cmd.Flags().GetString("yaml_file")
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
 	fileContent, err := os.ReadFile(yamlFile)
 	if err != nil {
 		fmt.Println("Error reading YAML file:", err)
@@ -76,7 +76,16 @@ func runCreateCommand(cmd *cobra.Command, args []string) {
 }
 
 func runUpdateCommand(cmd *cobra.Command, args []string) {
-
+	configName, err := cmd.Flags().GetString("config_name")
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+	yamlFile, err := cmd.Flags().GetString("yaml_file")
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
 	fileContent, err := os.ReadFile(yamlFile)
 	if err != nil {
 		fmt.Println("Error reading YAML file:", err)

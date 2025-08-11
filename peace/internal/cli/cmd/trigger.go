@@ -20,20 +20,20 @@ func NewTriggerCommand() *cobra.Command {
 		Run:   runTrigger,
 	}
 
-	cmd.Flags().IntP("id", "i", 0, "Pipeline ID to trigger (required)")
-	cmd.MarkFlagRequired("id")
+	cmd.Flags().StringP("name", "n", "", "Pipeline name to trigger (required)")
+	cmd.MarkFlagRequired("name")
 
 	return cmd
 }
 
 func runTrigger(cmd *cobra.Command, args []string) {
-	triggerPipelineID, err := cmd.Flags().GetInt("id")
+	pipelineName, err := cmd.Flags().GetString("name")
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
 	req := api.TriggerRequest{
-		PipelineID: triggerPipelineID,
+		PipelineName: pipelineName,
 	}
 	jsonData, err := json.Marshal(req)
 	if err != nil {

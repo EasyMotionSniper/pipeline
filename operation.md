@@ -24,4 +24,6 @@ go get gopkg.in/yaml.v3
 
 go get github.com/docker/docker/client@v25.0.12
 
-go get github.com/robfig/cron/v3
+go get -u github.com/hibiken/asynq
+
+go get github.com/google/uuid

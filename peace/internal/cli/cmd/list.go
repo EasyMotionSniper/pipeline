@@ -9,10 +9,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	listPipelineID string
-)
-
 // NewListCommand creates the list command
 func NewListCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -21,12 +17,17 @@ func NewListCommand() *cobra.Command {
 		Run:   runList,
 	}
 
-	cmd.Flags().StringVarP(&listPipelineID, "id", "i", "", "Specific pipeline ID to list")
+	cmd.Flags().StringP("id", "i", "", "Specific pipeline ID to list")
 
 	return cmd
 }
 
 func runList(cmd *cobra.Command, args []string) {
+	listPipelineID, err := cmd.Flags().GetString("id")
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
 	var path string
 	if listPipelineID != "" {
 		path = fmt.Sprintf("/pipeline/%s", listPipelineID)

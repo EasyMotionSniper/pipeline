@@ -6,7 +6,7 @@ type LoginRequest struct {
 }
 
 type TriggerRequest struct {
-	PipelineID int `json:"pipeline_id"`
+	PipelineName string `json:"pipeline_name"`
 }
 
 type TriggerResponse struct {

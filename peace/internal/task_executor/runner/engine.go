@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"pace/pkg/taskrpc"
+	"pace/pkg/queue"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -30,11 +30,11 @@ func NewDockerEngine() (*DockerEngine, error) {
 	return &DockerEngine{cli}, nil
 }
 
-func (d *DockerEngine) ExecuteTask(task taskrpc.Task) (taskrpc.TaskStatusUpdate, error) {
+func (d *DockerEngine) ExecuteTask(task queue.Task) (queue.TaskStatusUpdate, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	taskStatus := taskrpc.TaskStatusUpdate{}
+	taskStatus := queue.TaskStatusUpdate{}
 	resp, err := d.cli.ContainerCreate(
 		ctx,
 		&container.Config{
