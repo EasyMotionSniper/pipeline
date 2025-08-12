@@ -24,6 +24,7 @@ const (
 	ScheduleInvalid      = 10009
 	GetHistoryFail       = 10010
 	GetHistoryDetailFail = 10011
+	WebhookInvalid       = 10012
 )
 
 var errorMsg = map[int]string{
@@ -40,6 +41,7 @@ var errorMsg = map[int]string{
 	ScheduleInvalid:      "schedule invalid",
 	GetHistoryFail:       "get history fail",
 	GetHistoryDetailFail: "get history detail fail",
+	WebhookInvalid:       "webhook invalid",
 }
 
 func (e ErrNo) Error() string {

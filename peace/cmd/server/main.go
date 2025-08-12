@@ -21,6 +21,7 @@ func main() {
 	r.GET("/pipeline/:id", handler.ListPipelineDetail)
 	r.GET("/history", handler.ListExecutionHistory)
 	r.GET("/history/:id", handler.ListExecutionHistoryDetail)
+	r.POST("/webhook", handler.Webhook)
 	r.Run(":8080")
 
 }
