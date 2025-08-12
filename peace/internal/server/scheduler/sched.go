@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"pace/internal/common"
 	"pace/internal/server/dao"
 	"pace/internal/server/model"
 	"pace/pkg/queue"
@@ -21,7 +22,8 @@ func StartScheduler() error {
 
 func GetSchedulerService() *SchedulerService {
 	once.Do(func() {
-		scheduler := asynq.NewScheduler(asynq.RedisClientOpt{Addr: "localhost:6379", Password: "justredis"}, nil)
+		config := common.GetConfig()
+		scheduler := asynq.NewScheduler(asynq.RedisClientOpt{Addr: config.RedisAddr}, nil)
 		schedulerService = newSchedulerService(scheduler)
 		// if err := schedulerService.LoadAllSchedules(); err != nil {
 		// 	log.Fatalf("Failed to load schedules: %v", err)

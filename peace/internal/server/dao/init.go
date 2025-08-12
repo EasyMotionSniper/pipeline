@@ -1,7 +1,10 @@
 package dao
 
 import (
+	"fmt"
+	"pace/internal/common"
 	"pace/internal/server/model"
+	"strconv"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -10,7 +13,9 @@ import (
 var db *gorm.DB
 
 func init() {
-	dsn := "root:13616749175ymq@tcp(localhost:3306)/pace?charset=utf8mb4&parseTime=True&loc=Local"
+	config := common.GetConfig()
+	dsn := config.DBUser + ":" + config.DBPassword + "@tcp(" + config.DBHost + ":" + strconv.Itoa(config.DBPort) + ")/" + config.DBName + "?charset=utf8mb4&parseTime=True&loc=Local"
+	fmt.Println(dsn)
 	database, err := gorm.Open(mysql.Open(dsn))
 	if err != nil {
 		panic(err)

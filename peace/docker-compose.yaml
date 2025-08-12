@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # MySQL数据库
+  mysql:
+    image: docker.1ms.run/mysql:5.7
+    container_name: go-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword  # 根密码
+      MYSQL_DATABASE: pace             # 自动创建的数据库名
+      MYSQL_USER: pace_user               # 应用用户
+      MYSQL_PASSWORD: pace_password       # 应用用户密码
+    volumes:
+      - ./script/init.sql:/docker-entrypoint-initdb.d/init.sql
+      # 挂载MySQL数据目录（持久化）
+      - mysql-data:/var/lib/mysql
+      # 挂载MySQL日志
+      - ./logs/mysql:/var/log/mysql
+    networks:
+      - app-network
+    # 不暴露端口到宿主机
+    expose:
+      - 3306
+    healthcheck:
+      test: ["CMD", "sh", "-c", "mysqladmin ping -uroot -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5  
+
+  redis:
+    image: docker.1ms.run/redis:7.2-alpine
+    container_name: go-redis
+    restart: always
+    volumes:
+      # 挂载Redis数据
+      - redis-data:/data
+      # 挂载Redis日志
+      - ./logs/redis:/var/log/redis
+    networks:
+      - app-network
+    # 不暴露端口到宿主机
+    expose:
+      - 6379
+    command: redis-server --appendonly yes  # 开启数据持久化
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端服务
+  backend:
+    build: .
+    container_name: go-backend
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - APP_ENV=production
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=pace_user
+      - DB_PASSWORD=pace_password
+      - DB_NAME=pace
+      - REDIS_ADDR=redis:6379
+      - CERT_PATH=/app/certs/server.crt
+      - KEY_PATH=/app/certs/server.key
+      - LOG_PATH=/app/logs/backend.log
+    volumes:
+      - ./logs/backend:/app/logs
+      - ./script:/app/certs  # 宿主机路径:容器内路径
+    networks:
+      - app-network
+    # 仅暴露后端端口到宿主机
+    ports:
+      - "8080:8080"
+    command: ["backend"]
+
+  # 任务执行器
+  task-executor:
+    build: .
+    container_name: go-task-executor
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    environment:
+      - APP_ENV=production
+      - REDIS_ADDR=redis:6379
+      - LOG_PATH=/app/logs/executor.log
+    volumes:
+      # 挂载任务执行器日志
+      - ./logs/executor:/app/logs
+    networks:
+      - app-network
+    # 不暴露端口
+    expose: []
+    command: ["task_executor"]
+
+
+# 网络配置
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local
+  redis-data:
+    driver: local

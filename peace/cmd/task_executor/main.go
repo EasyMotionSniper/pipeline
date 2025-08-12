@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"pace/internal/common"
 	"pace/internal/task_executor/scheduler"
 	"pace/pkg/queue"
 
@@ -11,15 +12,15 @@ import (
 )
 
 func main() {
-
+	config := common.GetConfig()
 	srv := asynq.NewServer(
-		asynq.RedisClientOpt{Addr: "localhost:6379", Password: "justredis"},
+		asynq.RedisClientOpt{Addr: config.RedisAddr},
 		asynq.Config{
 			Concurrency: 10, // number of concurrent workers
 		},
 	)
 
-	client := asynq.NewClient(asynq.RedisClientOpt{Addr: "localhost:6379", Password: "justredis"})
+	client := asynq.NewClient(asynq.RedisClientOpt{Addr: config.RedisAddr})
 	pipelineCallback := func(update *queue.PipelineStatusUpdate) error {
 		data, err := json.Marshal(update)
 		if err != nil {

@@ -25,9 +25,13 @@ func NewListCommand() *cobra.Command {
 }
 
 func runList(cmd *cobra.Command, args []string) {
+	defer func() {
+		cmd.Flags().Set("id", "0")
+	}()
 	listPipelineId, _ := cmd.Flags().GetInt("id")
 	var path string
 	isBrief := true
+	fmt.Printf("List pipeline id: %d\n", listPipelineId)
 	if listPipelineId != 0 {
 		isBrief = false
 		path = fmt.Sprintf("/pipeline/%d", listPipelineId)

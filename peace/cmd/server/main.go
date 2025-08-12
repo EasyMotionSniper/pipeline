@@ -1,13 +1,14 @@
 package main
 
 import (
+	"pace/internal/common"
 	"pace/internal/server/handler"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-
+	config := common.GetConfig()
 	// gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.POST("/login", handler.UserLogin)
@@ -23,7 +24,7 @@ func main() {
 	r.GET("/history/:id", handler.ListExecutionHistoryDetail)
 	r.POST("/webhook", handler.Webhook)
 
-	err := r.RunTLS(":8080", "/home/ubuntu/pipeline/peace/script/server.crt", "/home/ubuntu/pipeline/peace/script/server.key")
+	err := r.RunTLS(":8080", config.CertPath, config.KeyPath)
 	if err != nil {
 		panic(err)
 	}
