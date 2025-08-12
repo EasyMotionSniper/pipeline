@@ -12,11 +12,13 @@ import (
 type PipelineDao interface {
 	// create pipeline
 	Create(ctx context.Context, pipeline *model.Pipeline, pipelineVersion *model.PipelineVersion) error
-	Update(ctx context.Context, oldName string, pipeline *model.Pipeline, pipelineVersion *model.PipelineVersion) error
-	// get pipeline by name
+	Update(ctx context.Context, id uint, pipeline *model.Pipeline, pipelineVersion *model.PipelineVersion) error
+	GetPipelineById(ctx context.Context, id uint) (*model.Pipeline, *model.PipelineVersion, error)
 	GetPipelineByName(ctx context.Context, name string) (*model.Pipeline, *model.PipelineVersion, error)
 	GetAllPipelines(ctx context.Context) ([]*model.Pipeline, error)
 	GetAllPipelineVersions(ctx context.Context) ([]*model.PipelineVersion, error)
+	GetPipelineVerions(ctx context.Context, versionIDs []uint) ([]*model.PipelineVersion, error)
+	GetPipelineVersionById(ctx context.Context, id uint) (*model.PipelineVersion, error)
 }
 
 type pipelineDAO struct {
@@ -49,11 +51,10 @@ func (d *pipelineDAO) Create(ctx context.Context, pipeline *model.Pipeline, pipe
 
 }
 
-func (d *pipelineDAO) Update(ctx context.Context, oldName string, newPipeline *model.Pipeline, pipelineVersion *model.PipelineVersion) error {
+func (d *pipelineDAO) Update(ctx context.Context, id uint, newPipeline *model.Pipeline, pipelineVersion *model.PipelineVersion) error {
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var pipeline model.Pipeline
-		// get pipeline by name
-		if err := tx.Where("name = ?", oldName).Take(&pipeline).Error; err != nil {
+		if err := tx.Where("id = ?", id).Take(&pipeline).Error; err != nil {
 			return err
 		}
 
@@ -85,7 +86,27 @@ func (d *pipelineDAO) GetPipelineByName(ctx context.Context, name string) (*mode
 		return nil, nil, err
 	}
 	// get pipeline version
-	err = db.WithContext(ctx).Where("pipeline_id = ? and version = ?", pipeline.ID, pipeline.LatestVersion).Take(&pipelineVersion).Error
+	err = db.WithContext(ctx).Where(&model.PipelineVersion{Version: pipeline.LatestVersion, PipelineID: pipeline.ID}).Take(&pipelineVersion).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil, common.NewErrNo(common.PipelineNotExists)
+		}
+		return nil, nil, err
+	}
+	return &pipeline, &pipelineVersion, nil
+}
+
+func (d *pipelineDAO) GetPipelineById(ctx context.Context, id uint) (*model.Pipeline, *model.PipelineVersion, error) {
+	var pipeline model.Pipeline
+	var pipelineVersion model.PipelineVersion
+	err := db.WithContext(ctx).Where("id = ?", id).Take(&pipeline).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil, common.NewErrNo(common.PipelineNotExists)
+		}
+		return nil, nil, err
+	}
+	err = db.WithContext(ctx).Where(&model.PipelineVersion{Version: pipeline.LatestVersion, PipelineID: pipeline.ID}).Take(&pipelineVersion).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil, common.NewErrNo(common.PipelineNotExists)
@@ -118,4 +139,20 @@ func (d *pipelineDAO) GetAllPipelineVersions(ctx context.Context) ([]*model.Pipe
 	}
 
 	return pipelineVersions, nil
+}
+
+func (d *pipelineDAO) GetPipelineVerions(ctx context.Context, versionIDs []uint) ([]*model.PipelineVersion, error) {
+	var pipelineVersions []*model.PipelineVersion
+	if err := db.WithContext(ctx).Where("pipeline_id IN ?", versionIDs).Find(&pipelineVersions).Error; err != nil {
+		return nil, err
+	}
+	return pipelineVersions, nil
+}
+
+func (d *pipelineDAO) GetPipelineVersionById(ctx context.Context, id uint) (*model.PipelineVersion, error) {
+	var pipelineVersion model.PipelineVersion
+	if err := db.WithContext(ctx).Where("id = ?", id).Take(&pipelineVersion).Error; err != nil {
+		return nil, err
+	}
+	return &pipelineVersion, nil
 }

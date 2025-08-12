@@ -8,7 +8,3 @@ type LoginRequest struct {
 type TriggerRequest struct {
 	PipelineName string `json:"pipeline_name"`
 }
-
-type TriggerResponse struct {
-	ExecutionID int `json:"execution_id"`
-}

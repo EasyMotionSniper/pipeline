@@ -23,9 +23,9 @@ func GetSchedulerService() *SchedulerService {
 	once.Do(func() {
 		scheduler := asynq.NewScheduler(asynq.RedisClientOpt{Addr: "localhost:6379", Password: "justredis"}, nil)
 		schedulerService = newSchedulerService(scheduler)
-		if err := schedulerService.LoadAllSchedules(); err != nil {
-			log.Fatalf("Failed to load schedules: %v", err)
-		}
+		// if err := schedulerService.LoadAllSchedules(); err != nil {
+		// 	log.Fatalf("Failed to load schedules: %v", err)
+		// }
 	})
 	return schedulerService
 }

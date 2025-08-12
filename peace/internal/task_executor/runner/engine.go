@@ -33,13 +33,18 @@ func NewDockerEngine() (*DockerEngine, error) {
 func (d *DockerEngine) ExecuteTask(task queue.Task) (queue.TaskStatusUpdate, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-
+	var fullCommand string
+	if task.ResultCheck != "" {
+		fullCommand = fmt.Sprintf("%s && %s", task.Command, task.ResultCheck)
+	} else {
+		fullCommand = task.Command
+	}
 	taskStatus := queue.TaskStatusUpdate{}
 	resp, err := d.cli.ContainerCreate(
 		ctx,
 		&container.Config{
 			Image: "docker.1ms.run/alpine:3.17",
-			Cmd:   []string{"sh", "-c", task.Command},
+			Cmd:   []string{"sh", "-c", fullCommand},
 		},
 		nil, nil, nil, "",
 	)

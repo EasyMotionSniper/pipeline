@@ -9,21 +9,6 @@ import (
 var token string
 var serverURL = "http://localhost:8080"
 
-type Pipeline struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	Config string `json:"config"`
-}
-
-// ExecutionHistory represents a pipeline execution record
-type ExecutionHistory struct {
-	ID         string `json:"id"`
-	PipelineID string `json:"pipeline_id"`
-	Status     string `json:"status"`
-	StartTime  string `json:"start_time"`
-	EndTime    string `json:"end_time"`
-}
-
 func SaveToken(t string) {
 	token = t
 }

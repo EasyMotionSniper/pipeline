@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"pace/internal/cli/client"
+	"pace/internal/common"
+	"pace/pkg/api"
 
 	"github.com/spf13/cobra"
 )
@@ -17,20 +19,18 @@ func NewListCommand() *cobra.Command {
 		Run:   runList,
 	}
 
-	cmd.Flags().StringP("id", "i", "", "Specific pipeline ID to list")
+	cmd.Flags().IntP("id", "i", 0, "Specific pipeline id to list")
 
 	return cmd
 }
 
 func runList(cmd *cobra.Command, args []string) {
-	listPipelineID, err := cmd.Flags().GetString("id")
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
-	}
+	listPipelineId, _ := cmd.Flags().GetInt("id")
 	var path string
-	if listPipelineID != "" {
-		path = fmt.Sprintf("/pipeline/%s", listPipelineID)
+	isBrief := true
+	if listPipelineId != 0 {
+		isBrief = false
+		path = fmt.Sprintf("/pipeline/%d", listPipelineId)
 	} else {
 		path = "/pipeline"
 	}
@@ -48,28 +48,49 @@ func runList(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	var result interface{}
-	if listPipelineID != "" {
-		var pipeline client.Pipeline
-		if err := json.Unmarshal(body, &pipeline); err != nil {
-			fmt.Printf("Error: Failed to parse response - %v\n", err)
-			return
-		}
-		result = pipeline
-	} else {
-		var pipelines []client.Pipeline
-		if err := json.Unmarshal(body, &pipelines); err != nil {
-			fmt.Printf("Error: Failed to parse response - %v\n", err)
-			return
-		}
-		result = pipelines
-	}
-
-	formatted, err := json.MarshalIndent(result, "", "  ")
-	if err != nil {
-		fmt.Printf("Error: Failed to format output - %v\n", err)
+	var listResp common.Response
+	if err := json.Unmarshal(body, &listResp); err != nil {
+		fmt.Printf("Error: %v\n", err)
 		return
 	}
+	if listResp.Code != 0 {
+		fmt.Printf("Error: %s\n", listResp.Message)
+		return
+	}
+	dataBytes, err := json.Marshal(listResp.Data)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+	if isBrief {
+		var pipelines []api.PipelineBrief
 
-	fmt.Println(string(formatted))
+		if err := json.Unmarshal(dataBytes, &pipelines); err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return
+		}
+		printPipelinesBrief(pipelines)
+	} else {
+		var pipelineDetail api.PipelineDetail
+		if err := json.Unmarshal(dataBytes, &pipelineDetail); err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return
+		}
+		printPipelineDetail(pipelineDetail)
+	}
+}
+
+func printPipelinesBrief(pipelines []api.PipelineBrief) {
+	if len(pipelines) == 0 {
+		fmt.Println("No pipelines found.")
+		return
+	}
+	fmt.Printf("%-5s %-20s %-50s\n", "ID", "NAME", "DESCRIPTION")
+	for _, p := range pipelines {
+		fmt.Printf("%-5d %-20s %-50s\n", p.ID, p.Name, p.Description)
+	}
+}
+
+func printPipelineDetail(pipeline api.PipelineDetail) {
+	fmt.Printf("%s\n", pipeline.Config)
 }

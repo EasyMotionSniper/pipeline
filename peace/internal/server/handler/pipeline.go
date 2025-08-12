@@ -9,6 +9,7 @@ import (
 	"pace/internal/server/scheduler"
 	"pace/pkg/api"
 	"pace/pkg/queue"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -55,7 +56,12 @@ func CreatePipeline(c *gin.Context) {
 }
 
 func UpdatePipeline(c *gin.Context) {
-	name := c.Param("name")
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		common.Error(c, common.NewErrNo(common.RequestInvalid))
+		return
+	}
+
 	yamlContent, err := c.GetRawData()
 	if err != nil {
 		common.Error(c, common.NewErrNo(common.RequestInvalid))
@@ -77,9 +83,9 @@ func UpdatePipeline(c *gin.Context) {
 	pipelineVersion := &model.PipelineVersion{
 		Config: string(yamlContent),
 	}
-	err = pipelineDAO.Update(c, name, pipeline, pipelineVersion)
+	err = pipelineDAO.Update(c, uint(id), pipeline, pipelineVersion)
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.PipelineNotExists))
+		common.Error(c, common.NewErrNo(common.PipelineExists))
 		return
 	}
 	err = scheduler.GetSchedulerService().UpsertPipelineSchedule(pipelineVersion)
@@ -117,8 +123,42 @@ func TriggerPipeline(c *gin.Context) {
 	// insert into pipeline execution record
 	// TODO
 
-	triggerResp := api.TriggerResponse{
-		ExecutionID: 1,
+	common.Success(c, nil)
+}
+
+func ListPipelines(c *gin.Context) {
+	pipelineDAO := dao.NewPipelineDao()
+	pipelines, err := pipelineDAO.GetAllPipelines(c)
+	if err != nil {
+		common.Error(c, common.NewErrNo(common.PipelineNotExists))
+		return
 	}
-	common.Success(c, triggerResp)
+	var pipelinesBrief []api.PipelineBrief
+	for _, pipeline := range pipelines {
+		pipelinesBrief = append(pipelinesBrief, api.PipelineBrief{
+			ID:          pipeline.ID,
+			Name:        pipeline.Name,
+			Description: pipeline.Description,
+		})
+	}
+	common.Success(c, pipelinesBrief)
+}
+
+func ListPipelineDetail(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		common.Error(c, common.NewErrNo(common.RequestInvalid))
+		return
+	}
+	pipelineDAO := dao.NewPipelineDao()
+	_, pipelineVersion, err := pipelineDAO.GetPipelineById(c, uint(id))
+	if err != nil {
+		common.Error(c, common.NewErrNo(common.PipelineNotExists))
+		return
+	}
+
+	pipelineDetail := api.PipelineDetail{
+		Config: pipelineVersion.Config,
+	}
+	common.Success(c, pipelineDetail)
 }

@@ -30,9 +30,9 @@ func NewUpdateCommand() *cobra.Command {
 		Short: "Update a pipeline with a new YAML configuration",
 		Run:   runUpdateCommand,
 	}
-	cmd.Flags().StringP("config_name", "n", "", "Config name (required)")
+	cmd.Flags().IntP("config_id", "i", 0, "Config ID (required)")
 	cmd.Flags().StringP("yaml_file", "f", "", "YAML file path (required)")
-	cmd.MarkFlagRequired("config_name")
+	cmd.MarkFlagRequired("config_id")
 	cmd.MarkFlagRequired("yaml_file")
 	return cmd
 }
@@ -50,7 +50,7 @@ func runCreateCommand(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	resp, err := client.SendFile(http.MethodPost, "/pipeline/create", bytes.NewBuffer(fileContent))
+	resp, err := client.SendFile(http.MethodPost, "/create", bytes.NewBuffer(fileContent))
 
 	if err != nil {
 		fmt.Println("Error sending file:", err)
@@ -76,7 +76,7 @@ func runCreateCommand(cmd *cobra.Command, args []string) {
 }
 
 func runUpdateCommand(cmd *cobra.Command, args []string) {
-	configName, err := cmd.Flags().GetString("config_name")
+	configID, err := cmd.Flags().GetInt("config_id")
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
@@ -92,7 +92,7 @@ func runUpdateCommand(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	resp, err := client.SendFile(http.MethodPost, fmt.Sprintf("/pipeline/update/%s", configName), bytes.NewBuffer(fileContent))
+	resp, err := client.SendFile(http.MethodPost, fmt.Sprintf("/update/%d", configID), bytes.NewBuffer(fileContent))
 
 	if err != nil {
 		fmt.Println("Error sending file:", err)

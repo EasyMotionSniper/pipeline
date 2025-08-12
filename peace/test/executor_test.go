@@ -5,6 +5,8 @@ import (
 	"pace/internal/task_executor/scheduler"
 	"pace/pkg/queue"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestScheduler(t *testing.T) {
@@ -17,9 +19,7 @@ func TestScheduler(t *testing.T) {
 		return nil
 	}
 	scheduler, err := scheduler.NewTaskScheduler(10, taskStatusCallback, pipelineCallback)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
 	scheduler.SchedulePipeline(&queue.PipelineExecuteInfo{
 		PipelineVersionID: 1,
 		Tasks: []queue.Task{

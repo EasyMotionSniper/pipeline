@@ -4,6 +4,7 @@ import (
 	"pace/internal/server/model"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -11,9 +12,7 @@ import (
 func setupTestDB(t *testing.T) *gorm.DB {
 	dsn := "root:13616749175ymq@tcp(localhost:3306)/pace?charset=utf8mb4&parseTime=True&loc=Local"
 	db, err := gorm.Open(mysql.Open(dsn))
-	if err != nil {
-		t.Fatalf("Failed to connect database: %v", err)
-	}
+	require.NoError(t, err)
 
 	return db
 }
@@ -33,8 +32,7 @@ func TestUserCreate(t *testing.T) {
 	}
 
 	result := db.Create(user)
-	if result.Error != nil {
-		t.Fatalf("Batch insert failed: %v", result.Error)
-	}
+	require.NoError(t, result.Error)
+	require.Equal(t, int64(2), result.RowsAffected)
 
 }

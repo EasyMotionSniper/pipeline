@@ -71,11 +71,4 @@ func runTrigger(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	var triggerRespData api.TriggerResponse
-	if err := json.Unmarshal(triggerResp.Data.([]byte), &triggerRespData); err != nil {
-		fmt.Printf("Error: Failed to deserialize response data - %v\n", err)
-		return
-	}
-
-	fmt.Printf("Successfully triggered pipeline with exec ID %d\n", triggerRespData.ExecutionID)
 }

@@ -11,31 +11,35 @@ type ErrNo struct {
 }
 
 const (
-	SuccessCode       = 0
-	ServiceErr        = 10000
-	RequestInvalid    = 10001
-	TokenInvalid      = 10002
-	PasswordErr       = 10003
-	UserNotExists     = 10004
-	YamlInvalid       = 10005
-	PipelineNotExists = 10006
-	PipelineExists    = 10007
-	PiplineStartFail  = 10008
-	ScheduleInvalid   = 10009
+	SuccessCode          = 0
+	ServiceErr           = 10000
+	RequestInvalid       = 10001
+	TokenInvalid         = 10002
+	PasswordErr          = 10003
+	UserNotExists        = 10004
+	YamlInvalid          = 10005
+	PipelineNotExists    = 10006
+	PipelineExists       = 10007
+	PiplineStartFail     = 10008
+	ScheduleInvalid      = 10009
+	GetHistoryFail       = 10010
+	GetHistoryDetailFail = 10011
 )
 
 var errorMsg = map[int]string{
-	SuccessCode:       "success",
-	ServiceErr:        "service error",
-	RequestInvalid:    "request invalid",
-	TokenInvalid:      "token invalid",
-	PasswordErr:       "password error",
-	UserNotExists:     "user not exists",
-	YamlInvalid:       "yaml invalid",
-	PipelineNotExists: "pipeline not exists",
-	PipelineExists:    "pipeline already exists",
-	PiplineStartFail:  "pipeline starts fail",
-	ScheduleInvalid:   "schedule invalid",
+	SuccessCode:          "success",
+	ServiceErr:           "service error",
+	RequestInvalid:       "request invalid",
+	TokenInvalid:         "token invalid",
+	PasswordErr:          "password error",
+	UserNotExists:        "user not exists",
+	YamlInvalid:          "yaml invalid",
+	PipelineNotExists:    "pipeline not exists",
+	PipelineExists:       "pipeline already exists",
+	PiplineStartFail:     "pipeline starts fail",
+	ScheduleInvalid:      "schedule invalid",
+	GetHistoryFail:       "get history fail",
+	GetHistoryDetailFail: "get history detail fail",
 }
 
 func (e ErrNo) Error() string {
