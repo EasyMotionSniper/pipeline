@@ -22,6 +22,10 @@ func main() {
 	r.GET("/history", handler.ListExecutionHistory)
 	r.GET("/history/:id", handler.ListExecutionHistoryDetail)
 	r.POST("/webhook", handler.Webhook)
-	r.Run(":8080")
+
+	err := r.RunTLS(":8080", "/home/ubuntu/pipeline/peace/script/server.crt", "/home/ubuntu/pipeline/peace/script/server.key")
+	if err != nil {
+		panic(err)
+	}
 
 }

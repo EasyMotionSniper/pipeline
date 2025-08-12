@@ -1,13 +1,25 @@
 package client
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 )
 
-var token string
-var serverURL = "http://localhost:8080"
+var (
+	token      string
+	serverURL  = "https://localhost:8080"
+	caCertPath = "/home/ubuntu/pipeline/peace/script/server.crt"
+)
+
+func init() {
+	if envCaPath := os.Getenv("CA_CERT_PATH"); envCaPath != "" {
+		caCertPath = envCaPath
+	}
+}
 
 func SaveToken(t string) {
 	token = t
@@ -40,12 +52,38 @@ func CreateRequest(method, path string, body io.Reader) (*http.Request, error) {
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
+	req.Header.Set("Accept", "application/json")
 	return req, nil
 }
 
 func DoRequest(req *http.Request) (*http.Response, error) {
-	client := &http.Client{}
+	client := &http.Client{
+		Transport: createTLSConfig(),
+	}
 	return client.Do(req)
+}
+
+func createTLSConfig() *http.Transport {
+	tlsConfig := &tls.Config{}
+
+	// tlsConfig.InsecureSkipVerify = true
+
+	if caCertPath != "" {
+		caCert, err := os.ReadFile(caCertPath)
+		if err != nil {
+			fmt.Printf("fail to read ca cert: %v\n", err)
+		} else {
+			caCertPool := x509.NewCertPool()
+			if caCertPool.AppendCertsFromPEM(caCert) {
+				tlsConfig.RootCAs = caCertPool
+			} else {
+				fmt.Println("fail to parse ca cert, use system default cert pool")
+			}
+		}
+	}
+	return &http.Transport{
+		TLSClientConfig: tlsConfig,
+	}
 }
 
 func ReadResponseBody(resp *http.Response) ([]byte, error) {
