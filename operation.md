@@ -27,3 +27,7 @@ go get github.com/docker/docker/client@v25.0.12
 go get -u github.com/hibiken/asynq
 
 go get github.com/google/uuid
+
+go get go.uber.org/zap
+
+go get gopkg.in/natefinch/lumberjack.v2

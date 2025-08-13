@@ -28,31 +28,31 @@ func Webhook(c *gin.Context) {
 	signature := c.GetHeader("X-Webhook-Signature")
 
 	if timestampStr == "" || signature == "" {
-		common.Error(c, common.NewErrNo(common.RequestInvalid))
+		common.Error(c, common.NewErrNo(common.REQUEST_INVALID))
 		return
 	}
 
 	timestamp, err := strconv.ParseInt(timestampStr, 10, 64)
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.RequestInvalid))
+		common.Error(c, common.NewErrNo(common.REQUEST_INVALID))
 		return
 	}
 
 	now := time.Now().Unix()
 	if now-timestamp > timestampMaxAge || timestamp > now {
-		common.Error(c, common.NewErrNo(common.RequestInvalid))
+		common.Error(c, common.NewErrNo(common.REQUEST_INVALID))
 		return
 	}
 
 	var payload WebhookPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		common.Error(c, common.NewErrNo(common.RequestInvalid))
+		common.Error(c, common.NewErrNo(common.REQUEST_INVALID))
 		return
 	}
 
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.RequestInvalid))
+		common.Error(c, common.NewErrNo(common.REQUEST_INVALID))
 		return
 	}
 
@@ -64,20 +64,20 @@ func Webhook(c *gin.Context) {
 
 	if computedSignature != signature {
 		fmt.Printf("computedSignature: %s, signature: %s\n", computedSignature, signature)
-		common.Error(c, common.NewErrNo(common.RequestInvalid))
+		common.Error(c, common.NewErrNo(common.WEBHOOK_INVALID))
 		return
 	}
 
 	_, pipelineVersion, err := dao.NewPipelineDao().GetPipelineByName(c, payload.Name)
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.PipelineNotExists))
+		common.Error(c, common.NewErrNo(common.PIPELINE_NOT_EXISTS))
 		return
 	}
 
 	// check config
 	pipelineConf, err := queue.ParsePipelineConfig(pipelineVersion.Config)
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.YamlInvalid))
+		common.Error(c, common.NewErrNo(common.YAML_INVALID))
 		return
 	}
 	ok := false
@@ -89,7 +89,7 @@ func Webhook(c *gin.Context) {
 		}
 	}
 	if !ok {
-		common.Error(c, common.NewErrNo(common.WebhookInvalid))
+		common.Error(c, common.NewErrNo(common.WEBHOOK_INVALID))
 		return
 	}
 	common.Success(c, nil)

@@ -66,7 +66,7 @@ func runTrigger(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if triggerResp.Code != common.SuccessCode {
+	if triggerResp.Code != common.SUCCESS {
 		fmt.Printf("Trigger failed: %s\n", triggerResp.Message)
 		return
 	}

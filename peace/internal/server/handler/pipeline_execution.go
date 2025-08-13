@@ -12,7 +12,7 @@ import (
 func ListExecutionHistory(c *gin.Context) {
 	historyList, err := dao.NewPipelineExecDao().GetLatestExecutionHistory(c)
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.GetHistoryFail))
+		common.Error(c, common.NewErrNo(common.GET_HISTORY_FAIL))
 		return
 	}
 	var versionIDs []uint
@@ -28,7 +28,7 @@ func ListExecutionHistory(c *gin.Context) {
 	}
 
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.GetHistoryFail))
+		common.Error(c, common.NewErrNo(common.GET_HISTORY_FAIL))
 		return
 	}
 
@@ -65,26 +65,26 @@ func ListExecutionHistory(c *gin.Context) {
 func ListExecutionHistoryDetail(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.RequestInvalid))
+		common.Error(c, common.NewErrNo(common.REQUEST_INVALID))
 		return
 	}
 
 	history, err := dao.NewPipelineExecDao().GetPipelineExecutionByID(c, uint(id))
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.GetHistoryDetailFail))
+		common.Error(c, common.NewErrNo(common.GET_HISTORY_DETAIL_FAIL))
 		return
 	}
 
 	pipelineVersion, err := dao.NewPipelineDao().GetPipelineVersionById(c, history.PipelineVersionID)
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.GetHistoryDetailFail))
+		common.Error(c, common.NewErrNo(common.GET_HISTORY_DETAIL_FAIL))
 		return
 	}
 
 	taskExecs, err := dao.NewTaskExecDao().GetTaskExecByUUID(c, history.PipelineExecuteUUID)
 
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.GetHistoryDetailFail))
+		common.Error(c, common.NewErrNo(common.GET_HISTORY_DETAIL_FAIL))
 		return
 	}
 

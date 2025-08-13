@@ -9,10 +9,13 @@ import (
 
 func main() {
 	config := common.GetConfig()
+	logger := common.GetLogger()
+	defer logger.Sync()
+
 	// gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.POST("/login", handler.UserLogin)
-
+	logger.Info("hello from server")
 	// r.Use(middleware.JWTAuthMiddleware())
 
 	r.POST("/update/:id", handler.UpdatePipeline)

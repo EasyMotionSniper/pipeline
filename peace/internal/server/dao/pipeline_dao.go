@@ -33,7 +33,7 @@ func (d *pipelineDAO) Create(ctx context.Context, pipeline *model.Pipeline, pipe
 		// create pipeline
 		if err := tx.Create(pipeline).Error; err != nil {
 			if errors.Is(err, gorm.ErrDuplicatedKey) {
-				return common.NewErrNo(common.PipelineExists)
+				return common.NewErrNo(common.PIPELINE_EXISTS)
 			}
 			return err
 		}
@@ -41,7 +41,7 @@ func (d *pipelineDAO) Create(ctx context.Context, pipeline *model.Pipeline, pipe
 		pipelineVersion.PipelineID = pipeline.ID
 		if err := tx.Create(pipelineVersion).Error; err != nil {
 			if errors.Is(err, gorm.ErrDuplicatedKey) {
-				return common.NewErrNo(common.PipelineExists)
+				return common.NewErrNo(common.PIPELINE_EXISTS)
 			}
 			return err
 		}
@@ -81,7 +81,7 @@ func (d *pipelineDAO) GetPipelineByName(ctx context.Context, name string) (*mode
 	err := db.WithContext(ctx).Where("name = ?", name).Take(&pipeline).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil, common.NewErrNo(common.PipelineNotExists)
+			return nil, nil, common.NewErrNo(common.PIPELINE_NOT_EXISTS)
 		}
 		return nil, nil, err
 	}
@@ -89,7 +89,7 @@ func (d *pipelineDAO) GetPipelineByName(ctx context.Context, name string) (*mode
 	err = db.WithContext(ctx).Where(&model.PipelineVersion{Version: pipeline.LatestVersion, PipelineID: pipeline.ID}).Take(&pipelineVersion).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil, common.NewErrNo(common.PipelineNotExists)
+			return nil, nil, common.NewErrNo(common.PIPELINE_NOT_EXISTS)
 		}
 		return nil, nil, err
 	}
@@ -102,14 +102,14 @@ func (d *pipelineDAO) GetPipelineById(ctx context.Context, id uint) (*model.Pipe
 	err := db.WithContext(ctx).Where("id = ?", id).Take(&pipeline).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil, common.NewErrNo(common.PipelineNotExists)
+			return nil, nil, common.NewErrNo(common.PIPELINE_NOT_EXISTS)
 		}
 		return nil, nil, err
 	}
 	err = db.WithContext(ctx).Where(&model.PipelineVersion{Version: pipeline.LatestVersion, PipelineID: pipeline.ID}).Take(&pipelineVersion).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil, common.NewErrNo(common.PipelineNotExists)
+			return nil, nil, common.NewErrNo(common.PIPELINE_NOT_EXISTS)
 		}
 		return nil, nil, err
 	}

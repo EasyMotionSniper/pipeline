@@ -45,7 +45,7 @@ func (d *userDAO) GetByUsername(ctx context.Context, username string) (*model.Us
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			fmt.Println("not found user")
-			return nil, common.NewErrNo(common.UserNotExists)
+			return nil, common.NewErrNo(common.USER_NOT_EXISTS)
 		}
 		fmt.Println(err)
 		return nil, err

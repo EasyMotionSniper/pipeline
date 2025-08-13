@@ -30,7 +30,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString, err := common.GetAuthorizationToken(c.GetHeader("Authorization"))
 		if err != nil {
-			common.Error(c, common.NewErrNo(common.TokenInvalid))
+			common.Error(c, common.NewErrNo(common.TOKEN_INVALID))
 			c.Abort()
 			return
 		}
@@ -41,7 +41,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			common.Error(c, common.NewErrNo(common.TokenInvalid))
+			common.Error(c, common.NewErrNo(common.TOKEN_INVALID))
 			c.Abort()
 			return
 		}
@@ -49,7 +49,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		if claims.ExpiresAt.Time.Before(time.Now().Add(common.JWTNewExpire)) {
 			newToken, err := GenerateJWT(claims.Role)
 			if err != nil {
-				common.Error(c, common.NewErrNo(common.TokenInvalid))
+				common.Error(c, common.NewErrNo(common.TOKEN_INVALID))
 				c.Abort()
 				return
 			}

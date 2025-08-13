@@ -46,7 +46,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
+	scheduler.SchedulePipeline(&queue.PipelineExecuteInfo{
+		PipelineVersionID: 1,
+		Tasks: []queue.Task{
+			{
+				Name:    "echo",
+				Command: "echo 'hello world'",
+			},
+		},
+	})
 	srv.Run(asynq.HandlerFunc(func(ctx context.Context, t *asynq.Task) error {
 		switch t.Type() {
 		case queue.PIPELINE_EXECUTE:

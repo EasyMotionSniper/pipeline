@@ -12,7 +12,7 @@ import (
 func UserLogin(c *gin.Context) {
 	var req api.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		common.Error(c, common.NewErrNo(common.RequestInvalid))
+		common.Error(c, common.NewErrNo(common.REQUEST_INVALID))
 		return
 	}
 
@@ -23,7 +23,7 @@ func UserLogin(c *gin.Context) {
 		return
 	}
 	if user.Password != req.Password {
-		common.Error(c, common.NewErrNo(common.PasswordErr))
+		common.Error(c, common.NewErrNo(common.PASSWORD_ERR))
 		return
 	}
 

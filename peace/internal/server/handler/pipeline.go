@@ -18,13 +18,13 @@ func CreatePipeline(c *gin.Context) {
 	// read yaml
 	yamlContent, err := c.GetRawData()
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.RequestInvalid))
+		common.Error(c, common.NewErrNo(common.REQUEST_INVALID))
 		return
 	}
 
 	pipelineConfig, err := queue.ParsePipelineConfig(string(yamlContent))
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.YamlInvalid))
+		common.Error(c, common.NewErrNo(common.YAML_INVALID))
 		return
 	}
 	fmt.Println(pipelineConfig)
@@ -42,13 +42,13 @@ func CreatePipeline(c *gin.Context) {
 	}
 	err = pipelineDAO.Create(c, pipeline, pipelineVersion)
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.PipelineExists))
+		common.Error(c, common.NewErrNo(common.PIPELINE_EXISTS))
 		return
 	}
 
 	err = scheduler.GetSchedulerService().UpsertPipelineSchedule(pipelineVersion)
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.ScheduleInvalid))
+		common.Error(c, common.NewErrNo(common.SCHEDULE_INVALID))
 		return
 	}
 
@@ -58,19 +58,19 @@ func CreatePipeline(c *gin.Context) {
 func UpdatePipeline(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.RequestInvalid))
+		common.Error(c, common.NewErrNo(common.REQUEST_INVALID))
 		return
 	}
 
 	yamlContent, err := c.GetRawData()
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.RequestInvalid))
+		common.Error(c, common.NewErrNo(common.REQUEST_INVALID))
 		return
 	}
 
 	pipelineConfig, err := queue.ParsePipelineConfig(string(yamlContent))
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.YamlInvalid))
+		common.Error(c, common.NewErrNo(common.YAML_INVALID))
 		return
 	}
 
@@ -85,12 +85,12 @@ func UpdatePipeline(c *gin.Context) {
 	}
 	err = pipelineDAO.Update(c, uint(id), pipeline, pipelineVersion)
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.PipelineExists))
+		common.Error(c, common.NewErrNo(common.PIPELINE_EXISTS))
 		return
 	}
 	err = scheduler.GetSchedulerService().UpsertPipelineSchedule(pipelineVersion)
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.ScheduleInvalid))
+		common.Error(c, common.NewErrNo(common.SCHEDULE_INVALID))
 		return
 	}
 
@@ -100,7 +100,7 @@ func UpdatePipeline(c *gin.Context) {
 func TriggerPipeline(c *gin.Context) {
 	var req api.TriggerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		common.Error(c, common.NewErrNo(common.RequestInvalid))
+		common.Error(c, common.NewErrNo(common.REQUEST_INVALID))
 		return
 	}
 	log.Printf("TriggerPipeline req: %v", req)
@@ -108,14 +108,14 @@ func TriggerPipeline(c *gin.Context) {
 	pipelineDAO := dao.NewPipelineDao()
 	_, pipelineVersion, err := pipelineDAO.GetPipelineByName(c, req.PipelineName)
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.PipelineNotExists))
+		common.Error(c, common.NewErrNo(common.PIPELINE_NOT_EXISTS))
 		return
 	}
 
 	// unmarshal pipeline config to tasks
 	pipelineConfig, err := queue.ParsePipelineConfig(pipelineVersion.Config)
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.YamlInvalid))
+		common.Error(c, common.NewErrNo(common.YAML_INVALID))
 		return
 	}
 	fmt.Println(pipelineConfig)
@@ -130,7 +130,7 @@ func ListPipelines(c *gin.Context) {
 	pipelineDAO := dao.NewPipelineDao()
 	pipelines, err := pipelineDAO.GetAllPipelines(c)
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.PipelineNotExists))
+		common.Error(c, common.NewErrNo(common.GET_HISTORY_FAIL))
 		return
 	}
 	var pipelinesBrief []api.PipelineBrief
@@ -147,13 +147,13 @@ func ListPipelines(c *gin.Context) {
 func ListPipelineDetail(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.RequestInvalid))
+		common.Error(c, common.NewErrNo(common.REQUEST_INVALID))
 		return
 	}
 	pipelineDAO := dao.NewPipelineDao()
 	_, pipelineVersion, err := pipelineDAO.GetPipelineById(c, uint(id))
 	if err != nil {
-		common.Error(c, common.NewErrNo(common.PipelineNotExists))
+		common.Error(c, common.NewErrNo(common.PIPELINE_NOT_EXISTS))
 		return
 	}
 

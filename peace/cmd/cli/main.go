@@ -6,29 +6,73 @@ import (
 	"os"
 	"os/exec"
 	"pace/internal/cli/cmd"
+	"pace/internal/common"
 	"strings"
 
 	"github.com/spf13/cobra"
 )
 
-func main() {
+var rootStartCmd = &cobra.Command{
+	Use:   "main",
+	Short: "Pipeline CLI with startup parameters",
+	Run: func(cmd *cobra.Command, args []string) {
+		ip, err := cmd.Flags().GetString("ip")
+		if ip == "localhost" {
+			ip = "127.0.0.1"
+		}
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "get ip failed: %v\n", err)
+			os.Exit(1)
+		}
 
-	rootCmd := &cobra.Command{
-		Run: func(cmd *cobra.Command, args []string) {
-		},
-	}
+		if !common.IsValidIP(ip) {
+			fmt.Fprintf(os.Stderr, "invalid ip %s\n", ip)
+			os.Exit(1)
+		}
+		port, err := cmd.Flags().GetInt("port")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "get port failed: %v\n", err)
+			os.Exit(1)
+		}
 
-	cmd.RegisterCommands(rootCmd)
+		if !common.IsValidPort(port) {
+			fmt.Fprintf(os.Stderr, "invalid port %d\n", port)
+			os.Exit(1)
+		}
 
-	startInteractiveMode(rootCmd)
+		if !common.IsServerOnline(ip, port) {
+			fmt.Fprintf(os.Stderr, "server %s:%d not online\n", ip, port)
+			os.Exit(1)
+		}
+
+	},
 }
 
-func startInteractiveMode(rootCmd *cobra.Command) {
+func init() {
+	rootStartCmd.Flags().StringP("ip", "i", "127.0.0.1", "Target IP address (e.g., -i 127.0.0.1)")
+	rootStartCmd.Flags().IntP("port", "p", 8080, "Target port (e.g., -p 8080)")
+}
+
+func main() {
+	if err := rootStartCmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "启动失败: %v\n", err)
+		os.Exit(1)
+	}
+	startInteractiveMode()
+}
+
+func startInteractiveMode() {
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println("Pipeline CLI - Type 'help' to show help, 'exit' to exit")
 	fmt.Print(">> ")
 
 	for scanner.Scan() {
+		rootCmd := &cobra.Command{
+			Run: func(cmd *cobra.Command, args []string) {
+			},
+		}
+
+		cmd.RegisterCommands(rootCmd)
 		input := strings.TrimSpace(scanner.Text())
 		if input == "exit" {
 			break

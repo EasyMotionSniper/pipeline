@@ -11,37 +11,37 @@ type ErrNo struct {
 }
 
 const (
-	SuccessCode          = 0
-	ServiceErr           = 10000
-	RequestInvalid       = 10001
-	TokenInvalid         = 10002
-	PasswordErr          = 10003
-	UserNotExists        = 10004
-	YamlInvalid          = 10005
-	PipelineNotExists    = 10006
-	PipelineExists       = 10007
-	PiplineStartFail     = 10008
-	ScheduleInvalid      = 10009
-	GetHistoryFail       = 10010
-	GetHistoryDetailFail = 10011
-	WebhookInvalid       = 10012
+	SUCCESS     = 0
+	SERVICE_ERR = iota + 10000
+	REQUEST_INVALID
+	TOKEN_INVALID
+	PASSWORD_ERR
+	USER_NOT_EXISTS
+	YAML_INVALID
+	PIPELINE_NOT_EXISTS
+	PIPELINE_EXISTS
+	PIPELINE_START_FAIL
+	SCHEDULE_INVALID
+	GET_HISTORY_FAIL
+	GET_HISTORY_DETAIL_FAIL
+	WEBHOOK_INVALID
 )
 
 var errorMsg = map[int]string{
-	SuccessCode:          "success",
-	ServiceErr:           "service error",
-	RequestInvalid:       "request invalid",
-	TokenInvalid:         "token invalid",
-	PasswordErr:          "password error",
-	UserNotExists:        "user not exists",
-	YamlInvalid:          "yaml invalid",
-	PipelineNotExists:    "pipeline not exists",
-	PipelineExists:       "pipeline already exists",
-	PiplineStartFail:     "pipeline starts fail",
-	ScheduleInvalid:      "schedule invalid",
-	GetHistoryFail:       "get history fail",
-	GetHistoryDetailFail: "get history detail fail",
-	WebhookInvalid:       "webhook invalid",
+	SUCCESS:                 "success",
+	SERVICE_ERR:             "service error",
+	REQUEST_INVALID:         "request invalid",
+	TOKEN_INVALID:           "token invalid",
+	PASSWORD_ERR:            "password error",
+	USER_NOT_EXISTS:         "user not exists",
+	YAML_INVALID:            "yaml invalid",
+	PIPELINE_NOT_EXISTS:     "pipeline not exists",
+	PIPELINE_EXISTS:         "pipeline already exists",
+	PIPELINE_START_FAIL:     "pipeline starts fail",
+	SCHEDULE_INVALID:        "schedule invalid",
+	GET_HISTORY_FAIL:        "get history fail",
+	GET_HISTORY_DETAIL_FAIL: "get history detail fail",
+	WEBHOOK_INVALID:         "webhook invalid",
 }
 
 func (e ErrNo) Error() string {
@@ -61,7 +61,7 @@ func ConvertErr(err error) ErrNo {
 		return e
 	}
 	e = ErrNo{
-		ErrCode: ServiceErr,
+		ErrCode: SERVICE_ERR,
 		ErrMsg:  err.Error(),
 	}
 	return e

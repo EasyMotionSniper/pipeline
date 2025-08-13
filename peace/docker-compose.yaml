@@ -6,17 +6,17 @@ services:
     image: docker.1ms.run/mysql:5.7
     container_name: go-mysql
     restart: always
+    logging:
+      driver: none
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword  # 根密码
-      MYSQL_DATABASE: pace             # 自动创建的数据库名
-      MYSQL_USER: pace_user               # 应用用户
-      MYSQL_PASSWORD: pace_password       # 应用用户密码
+      - MYSQL_ROOT_PASSWORD=rootpassword  # 根密码
+      - MYSQL_DATABASE=pace             # 自动创建的数据库名
+      - MYSQL_USER=pace_user               # 应用用户
+      - MYSQL_PASSWORD=pace_password       # 应用用户密码
     volumes:
       - ./script/init.sql:/docker-entrypoint-initdb.d/init.sql
       # 挂载MySQL数据目录（持久化）
       - mysql-data:/var/lib/mysql
-      # 挂载MySQL日志
-      - ./logs/mysql:/var/log/mysql
     networks:
       - app-network
     # 不暴露端口到宿主机
@@ -32,11 +32,11 @@ services:
     image: docker.1ms.run/redis:7.2-alpine
     container_name: go-redis
     restart: always
+    logging:
+      driver: none
     volumes:
       # 挂载Redis数据
       - redis-data:/data
-      # 挂载Redis日志
-      - ./logs/redis:/var/log/redis
     networks:
       - app-network
     # 不暴露端口到宿主机
@@ -72,7 +72,9 @@ services:
       - LOG_PATH=/app/logs/backend.log
     volumes:
       - ./logs/backend:/app/logs
-      - ./script:/app/certs  # 宿主机路径:容器内路径
+      - ./script:/app/certs 
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     networks:
       - app-network
     # 仅暴露后端端口到宿主机
@@ -99,6 +101,9 @@ services:
     volumes:
       # 挂载任务执行器日志
       - ./logs/executor:/app/logs
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     networks:
       - app-network
     # 不暴露端口
